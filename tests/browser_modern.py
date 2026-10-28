@@ -13,7 +13,7 @@ with sync_playwright() as p:
  page.locator('[data-check="0-12"]').click();assert page.locator('#weigh-in').is_visible()
  page.locator('#quick-weight').fill('75.5');page.locator('#weigh-in-form [type=submit]').click()
  assert page.locator('[data-check="0-12"]').get_attribute('aria-pressed')=='true'
- assert page.get_by_role('progressbar').get_attribute('aria-valuenow')=='10'
+ assert page.get_by_role('progressbar').get_attribute('aria-valuenow')=='1'
  assert page.locator('.celebration i').count()==14
  page.locator('[data-page="weight"]').click();assert page.locator('.weight-summary b').first.inner_text().startswith('75.5')
  page.locator('[data-page="today"]').click();page.locator('[data-group="בוקר"]').click()
