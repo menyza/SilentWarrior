@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "silent-warrior-reminders",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "triggers": {"crons": ["*/5 * * * *"]},
+  "vars": {"APP_ORIGIN": "https://menyza.github.io", "VAPID_SUBJECT": "https://menyza.github.io/SilentWarrior/"},
+  "d1_databases": [{"binding":"DB","database_name":"silent-warrior-reminders","database_id":"00000000-0000-0000-0000-000000000000","migrations_dir":"migrations"}]
+}
