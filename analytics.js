@@ -16,3 +16,11 @@ export function summary(state,dates,today=dayKey()){
  return {points,total:allKeys.reduce((n,d)=>n+dailyScore(state,d),0),activeDays:elapsed.filter(d=>dailyScore(state,d)>0).length,
  rows:habits.map(h=>({...h,...streaks(state,h.id,today),pointsInPeriod:elapsed.reduce((n,d)=>n+earnedPoints(h,state.days[d]?.[h.id]),0)}))};
 }
+export function weeklyReview(state,today=dayKey()){
+ const dates=periodDates('week',today).filter(d=>d<=today),previous=dates.map(d=>shiftDay(d,-7));
+ const count=(h,days)=>days.filter(d=>state.days[d]?.[h.id]==='done').length;
+ const rows=habits.map(h=>({...h,count:count(h,dates),previous:count(h,previous),target:h.exercise?3:7}));
+ return {dates,previous,rows,workouts:rows.find(h=>h.exercise).count,
+  previousHasData:previous.some(d=>dailyScore(state,d)>0),
+  actions:rows.reduce((sum,h)=>sum+h.count,0),previousActions:rows.reduce((sum,h)=>sum+h.previous,0)};
+}
