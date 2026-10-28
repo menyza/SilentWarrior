@@ -1,0 +1,7 @@
+export const habitGroups=['בוקר','במהלך היום','ערב'];
+export const habitIcons=['✨','💧','📖','🧘','🚶','🍎','🎵','🛏️','🧹','💬','💪','🌱'];
+export function cleanCustomHabits(raw){const result=[],seen=new Set();if(!Array.isArray(raw))return result;for(const h of raw.slice(0,100)){if(!h||typeof h.id!=='string'||!/^custom-[a-f0-9-]{36}$/.test(h.id)||seen.has(h.id)||typeof h.name!=='string'||!h.name.trim()||h.name.trim().length>60||!habitGroups.includes(h.group)||![1,2,3].includes(h.importance)||![1,2,3].includes(h.effort))continue;seen.add(h.id);result.push({id:h.id,name:h.name.trim(),group:h.group,icon:habitIcons.includes(h.icon)?h.icon:'✨',importance:h.importance,effort:h.effort,points:5*(h.importance+h.effort-1),frequency:'daily',target:7,exercise:false,measurement:false});}return result;}
+export function addHabit(state,values){if(state.customHabits.length>=100)throw new Error('אפשר לשמור עד 100 הרגלים אישיים.');const candidate={...values,id:'custom-'+crypto.randomUUID()};const [habit]=cleanCustomHabits([candidate]);if(!habit)throw new Error('יש להזין שם של עד 60 תווים ולבחור חלק יום, חשיבות ומאמץ.');state.customHabits.push(habit);return habit;}
+export function archiveHabit(state,id){if(!state.removedHabits.includes(id))state.removedHabits.push(id);}
+export function restoreHabit(state,id){state.removedHabits=state.removedHabits.filter(value=>value!==id);}
+export const escapeHtml=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

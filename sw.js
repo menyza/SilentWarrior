@@ -1,5 +1,5 @@
 const CACHE='silent-warrior-v2';
-const ASSETS=['./','index.html','style.css','app.js','model.js','analytics.js','weight.js','push-ui.js','reorder.js','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png'];
+const ASSETS=['./','index.html','style.css','app.js','model.js','habit-catalog.js','analytics.js','weight.js','push-ui.js','reorder.js','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('silent-warrior-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',event=>{

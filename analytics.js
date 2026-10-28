@@ -1,4 +1,4 @@
-import {dayKey,habits,dailyScore,earnedPoints} from './model.js';
+import {dayKey,habits,allHabits,dailyScore,earnedPoints} from './model.js';
 export function shiftDay(key,amount){const d=new Date(key+'T12:00:00');d.setDate(d.getDate()+amount);return dayKey(d);}
 export function periodDates(mode,anchor){const d=new Date(anchor+'T12:00:00');if(mode==='month')d.setDate(1);else d.setDate(d.getDate()-d.getDay());const start=dayKey(d),end=new Date(d);if(mode==='month')end.setMonth(end.getMonth()+1);else end.setDate(end.getDate()+7);const dates=[];for(let k=start;k<dayKey(end);k=shiftDay(k,1))dates.push(k);return dates;}
 export function movePeriod(mode,anchor,amount){const d=new Date(anchor+'T12:00:00');if(mode==='month'){d.setDate(1);d.setMonth(d.getMonth()+amount);}else d.setDate(d.getDate()+amount*7);return dayKey(d);}
@@ -14,12 +14,12 @@ export function summary(state,dates,today=dayKey()){
  const elapsed=dates.filter(d=>d<=today),points=elapsed.reduce((n,d)=>n+dailyScore(state,d),0);
  const allKeys=Object.keys(state.days).filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&d<=today);
  return {points,total:allKeys.reduce((n,d)=>n+dailyScore(state,d),0),activeDays:elapsed.filter(d=>dailyScore(state,d)>0).length,
- rows:habits.map(h=>({...h,...streaks(state,h.id,today),pointsInPeriod:elapsed.reduce((n,d)=>n+earnedPoints(h,state.days[d]?.[h.id]),0)}))};
+ rows:allHabits(state).map(h=>({...h,...streaks(state,h.id,today),pointsInPeriod:elapsed.reduce((n,d)=>n+earnedPoints(h,state.days[d]?.[h.id]),0)}))};
 }
 export function weeklyReview(state,today=dayKey()){
  const dates=periodDates('week',today).filter(d=>d<=today),previous=dates.map(d=>shiftDay(d,-7));
  const count=(h,days)=>days.filter(d=>state.days[d]?.[h.id]==='done').length;
- const rows=habits.map(h=>({...h,count:count(h,dates),previous:count(h,previous),target:h.exercise?3:7}));
+ const rows=allHabits(state).map(h=>({...h,count:count(h,dates),previous:count(h,previous),target:h.exercise?3:7}));
  return {dates,previous,rows,workouts:rows.find(h=>h.exercise).count,
   previousHasData:previous.some(d=>dailyScore(state,d)>0),
   actions:rows.reduce((sum,h)=>sum+h.count,0),previousActions:rows.reduce((sum,h)=>sum+h.previous,0)};
