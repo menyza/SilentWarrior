@@ -6,7 +6,10 @@ let page='today',selected=dayKey(),group=new Date().getHours()<12?'בוקר':new
 let periodMode='week',periodAnchor=dayKey(),historyDetail=false;
 const groups=['בוקר','במהלך היום','ערב'];
 function groupTabs(key){return `<div class="tabs day-tabs" role="group" aria-label="חלקי היום">${groups.map((g,i)=>{const list=habits.filter(h=>h.group===g),n=list.filter(h=>['done','rest'].includes(state.days[key]?.[h.id])).length;return `<button data-group="${g}" aria-pressed="${g===group}" class="${g===group?'selected':''}"><span>${['☀','◷','☾'][i]} ${g}</span><small><bdi>${n} / ${list.length}</bdi></small></button>`;}).join('')}</div>`;}
-function habitPanel(key){return `<section class="habit-panel" aria-label="הרגלי ${group}"><div class="panel-heading"><h2>${group}</h2><span>ניקוד לפי חשיבות ומאמץ</span></div><div class="cards">${habits.filter(h=>h.group===group).map(h=>card(h,key)).join('')}</div><p class="closing">כל הרגל הוא אבן בסיס. ממשיכים בקצב שלך.</p></section>`;}
+function habitPanel(key){
+const list=habits.filter(h=>h.group===group),isDone=h=>['done','rest'].includes(state.days[key]?.[h.id]),pending=list.filter(h=>!isDone(h)),done=list.filter(isDone);
+return `<section class="habit-panel" aria-label="הרגלי ${group}"><div class="panel-heading"><h2>${group}</h2><span>${pending.length} נשארו · ${done.length} הושלמו</span></div><div class="cards pending-cards">${pending.map(h=>card(h,key)).join('')}</div>${pending.length===0?'<p class="group-complete" role="status">✦ כל הרגלי הקבוצה הושלמו!</p>':''}${done.length?`<div class="completed-heading"><h3>הושלמו · ${done.length}</h3><span>אפשר לבטל סימון בכל רגע</span></div><div class="cards completed-cards">${done.map(h=>card(h,key)).join('')}</div>`:''}<p class="closing">כל הרגל הוא אבן בסיס. ממשיכים בקצב שלך.</p></section>`;
+}
 const main=document.querySelector('main');
 const dateLabel=k=>new Date(k+'T12:00:00').toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'});
 function save(){try{localStorage.setItem(storageKey,JSON.stringify(state));storageOK=true;}catch{storageOK=false;} }
@@ -40,7 +43,7 @@ if(b.dataset.reportDay){selected=b.dataset.reportDay;historyDetail=true;render()
 if(b.id==='back-report'){historyDetail=false;render();return;}
 if(b.dataset.group||b.dataset.openGroup){group=b.dataset.group||b.dataset.openGroup;if(b.dataset.openGroup)page='today';render();main.querySelector('.habit-panel')?.scrollTo(0,0);return;}
 if(b.dataset.date){selected=b.dataset.date;render();main.querySelector('.habit-panel')?.scrollTo(0,0);return;}
-const id=b.dataset.check||b.dataset.rest;if(id){const h=habits.find(h=>h.id===id),key=page==='history'?selected:dayKey();if(b.dataset.check&&h.exercise&&state.days[key]?.[id]==='rest'){state.days[key][id]=null;}else toggle(state,key,id,b.dataset.rest?'rest':'done');save();render();const focus=document.querySelector(`[data-${b.dataset.rest?'rest':'check'}="${id}"]`);focus?.focus({preventScroll:true});toast(storageOK?(['done','rest'].includes(state.days[key]?.[id])?'נשמר. עוד צעד קטן בשבילך ✦':'הסימון בוטל'):'לא ניתן לשמור במכשיר');}
+const id=b.dataset.check||b.dataset.rest;if(id){const h=habits.find(h=>h.id===id),key=page==='history'?selected:dayKey();if(b.dataset.check&&h.exercise&&state.days[key]?.[id]==='rest'){state.days[key][id]=null;}else toggle(state,key,id,b.dataset.rest?'rest':'done');save();render();if(e.detail===0){const focus=document.querySelector('.pending-cards [data-check]')||document.querySelector(`[data-check="${id}"]`);focus?.focus({preventScroll:true});}toast(storageOK?(['done','rest'].includes(state.days[key]?.[id])?'נשמר. עוד צעד קטן בשבילך ✦':'הסימון בוטל'):'לא ניתן לשמור במכשיר');}
 });
 document.addEventListener('submit',e=>{if(e.target.id!=='goal-form')return;e.preventDefault();const input=e.target.elements.goal;if(!input.reportValidity())return;state.dailyGoal=Number(input.value);save();render();toast(storageOK?'היעד היומי נשמר':'לא ניתן לשמור במכשיר');});
 let lastDay=dayKey();setInterval(()=>{if(dayKey()!==lastDay){lastDay=dayKey();render();}},30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){lastDay=dayKey();render();}});render();
