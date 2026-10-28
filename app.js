@@ -1,4 +1,4 @@
-import {periodDates,movePeriod,summary} from './analytics.js';
+import {periodDates,movePeriod,summary,streaks} from './analytics.js';
 import {habits,dayKey,load,completed,toggle,dailyScore,earnedPoints,maxDailyPoints} from './model.js';
 const storageKey='silent-warrior-v1';let state;let storageOK=true;
 try{state=load(localStorage.getItem(storageKey));}catch{state=load(null);storageOK=false;}
@@ -8,12 +8,30 @@ const groups=['בוקר','במהלך היום','ערב'];
 function groupTabs(key){return `<div class="tabs day-tabs" role="group" aria-label="חלקי היום">${groups.map((g,i)=>{const list=habits.filter(h=>h.group===g),n=list.filter(h=>['done','rest'].includes(state.days[key]?.[h.id])).length;return `<button data-group="${g}" aria-pressed="${g===group}" class="${g===group?'selected':''}"><span>${['☀','◷','☾'][i]} ${g}</span><small><bdi>${n} / ${list.length}</bdi></small></button>`;}).join('')}</div>`;}
 function habitPanel(key){
 const list=habits.filter(h=>h.group===group),isDone=h=>['done','rest'].includes(state.days[key]?.[h.id]),pending=list.filter(h=>!isDone(h)),done=list.filter(isDone);
-return `<section class="habit-panel compact-panel" aria-label="הרגלי ${group}"><div class="panel-heading"><h2>${group}</h2><span>${pending.length} נשארו · ${done.length} הושלמו</span></div><div class="cards compact-grid" style="--rows:${Math.ceil(list.length/3)}">${[...pending,...done].map(h=>card(h,key)).join('')}</div></section>`;
+return `<section class="habit-panel compact-panel" aria-label="הרגלי ${group}"><div class="panel-heading"><h2>${group}</h2><span>${pending.length} נשארו · ${done.length} הושלמו</span></div><div class="cards compact-grid" style="--rows:${Math.ceil(list.length/3)}">${list.map(h=>card(h,key)).join('')}</div></section>`;
 }
 const main=document.querySelector('main');
 const dateLabel=k=>new Date(k+'T12:00:00').toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'});
 function save(){try{localStorage.setItem(storageKey,JSON.stringify(state));storageOK=true;}catch{storageOK=false;} }
 function toast(t){document.querySelector('#toast').textContent=t;clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>document.querySelector('#toast').textContent='',2400);}
+function reward(h,key,before,after){
+const tile=document.querySelector(`[data-check="${h.id}"]`)?.closest('.habit-tile');
+const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const points=after-before;
+const groupComplete=habits.filter(x=>x.group===h.group).every(x=>['done','rest'].includes(state.days[key]?.[x.id]));
+const goalReached=before<state.dailyGoal&&after>=state.dailyGoal&&!state.goalCelebratedDays.includes(key);
+if(goalReached){state.goalCelebratedDays.push(key);save();}
+const streak=streaks(state,h.id,key).current;
+const message=goalReached?'🏆 היעד היומי הושלם! בנית את זה, פעולה אחרי פעולה.':groupComplete?`✦ כל הרגלי ${h.group} הושלמו. יפה עשית!`:streak>1?`+${points} נק׳ · ${streak} ימים ברצף בהרגל הזה!`:`+${points} נק׳ · ${['עוד אבן בבסיס שלך.','עמדת במילה שלך לעצמך.','פעולה קטנה, התקדמות אמיתית.'][completed(state,key)%3]}`;
+const status=document.querySelector('.meter-footer [role="status"]');if(status)status.textContent=message;else toast(message);
+if(reduced)return;
+tile?.classList.add('just-completed');
+if(tile){const badge=document.createElement('span');badge.className='earned-burst';badge.textContent=`+${points}`;badge.setAttribute('aria-hidden','true');tile.append(badge);setTimeout(()=>{badge.remove();tile.classList.remove('just-completed');},850);}
+const meter=document.querySelector('.daily-meter');meter?.classList.add(goalReached?'goal-won':'score-earned');
+const fill=document.querySelector('.track>div');if(fill){fill.style.width=`${Math.min(100,before/state.dailyGoal*100)}%`;requestAnimationFrame(()=>requestAnimationFrame(()=>fill.style.width=`${Math.min(100,after/state.dailyGoal*100)}%`));}
+setTimeout(()=>meter?.classList.remove('goal-won','score-earned'),1300);
+if(goalReached||groupComplete){const layer=document.createElement('div');layer.className='celebration';layer.setAttribute('aria-hidden','true');for(let i=0;i<(goalReached?24:12);i++){const bit=document.createElement('i');bit.style.cssText=`--x:${(i*37)%100}%;--delay:${i%6*45}ms;--turn:${i*41}deg;--shade:${['#e6bd64','#77a583','#d9e6b1'][i%3]}`;layer.append(bit);}document.querySelector('.app').append(layer);setTimeout(()=>layer.remove(),1500);}
+}
 const tileLooks=[
  [['💧','כוס מים'],['🌅','רגע להתעורר'],['🎵','מוזיקה'],['🧘','מתיחות בוקר'],['🌬️','5 נשימות'],['📵','בוקר בלי טלפון'],['🪥','צחצוח שיניים'],['🧴','טיפוח פנים'],['🛏️','סידור מיטה'],['🧹','סידור קצר'],['🍳','ארוחת בוקר'],['💊','תוספי בוקר']],
  [['🥤','שייק וקריאטין'],['📖','קריאה'],['🏋️','אימון'],['🚶','הליכה יומית'],['⏰','יקיצה קבועה'],['🌙','שינה בזמן'],['🚰','מים לאורך היום'],['🏠','ניקוי הבית']],
@@ -51,7 +69,7 @@ if(b.dataset.reportDay){selected=b.dataset.reportDay;historyDetail=true;render()
 if(b.id==='back-report'){historyDetail=false;render();return;}
 if(b.dataset.group||b.dataset.openGroup){group=b.dataset.group||b.dataset.openGroup;if(b.dataset.openGroup)page='today';render();main.querySelector('.habit-panel')?.scrollTo(0,0);return;}
 if(b.dataset.date){selected=b.dataset.date;render();main.querySelector('.habit-panel')?.scrollTo(0,0);return;}
-const id=b.dataset.check||b.dataset.rest;if(id){const h=habits.find(h=>h.id===id),key=page==='history'?selected:dayKey();if(b.dataset.check&&h.exercise&&state.days[key]?.[id]==='rest'){state.days[key][id]=null;}else toggle(state,key,id,b.dataset.rest?'rest':'done');save();if(b.dataset.rest)document.querySelector('#habit-detail').close();render();if(e.detail===0){const focus=document.querySelector('.compact-grid .habit:not(.done) [data-check]')||document.querySelector(`[data-check="${id}"]`);focus?.focus({preventScroll:true});}toast(storageOK?(['done','rest'].includes(state.days[key]?.[id])?'נשמר. עוד צעד קטן בשבילך ✦':'הסימון בוטל'):'לא ניתן לשמור במכשיר');}
+const id=b.dataset.check||b.dataset.rest;if(id){const h=habits.find(h=>h.id===id),key=page==='history'?selected:dayKey(),before=dailyScore(state,key),wasDone=['done','rest'].includes(state.days[key]?.[id]);if(b.dataset.check&&h.exercise&&state.days[key]?.[id]==='rest'){state.days[key][id]=null;}else toggle(state,key,id,b.dataset.rest?'rest':'done');save();if(b.dataset.rest)document.querySelector('#habit-detail').close();render();if(e.detail===0){const focus=document.querySelector(`[data-check="${id}"]`);focus?.focus({preventScroll:true});}const nowDone=['done','rest'].includes(state.days[key]?.[id]);if(!storageOK)toast('לא ניתן לשמור במכשיר');else if(nowDone&&!wasDone&&key===dayKey())reward(h,key,before,dailyScore(state,key));else toast(nowDone?'הסימון עודכן':'הסימון בוטל');}
 });
 document.addEventListener('submit',e=>{if(e.target.id!=='goal-form')return;e.preventDefault();const input=e.target.elements.goal;if(!input.reportValidity())return;state.dailyGoal=Number(input.value);save();render();toast(storageOK?'היעד היומי נשמר':'לא ניתן לשמור במכשיר');});
 let lastDay=dayKey();setInterval(()=>{if(dayKey()!==lastDay){lastDay=dayKey();render();}},30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){lastDay=dayKey();render();}});render();
