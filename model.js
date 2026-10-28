@@ -6,6 +6,6 @@ const groups = [
 export const habits = groups.flatMap(([group,names],g)=>names.map((name,i)=>({id:`${g}-${i}`,name,group,exercise:g===1&&i===2})));
 export const defaultAnchors=['0-0','0-8','0-10'];
 export function dayKey(date=new Date()){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
-export function load(raw){try{const x=JSON.parse(raw);return {days:x?.days&&typeof x.days==='object'&&!Array.isArray(x.days)?x.days:{},anchors:Array.isArray(x?.anchors)?x.anchors.filter(id=>habits.some(h=>h.id===id)):defaultAnchors};}catch{return {days:{},anchors:[...defaultAnchors]};}}
+export function load(raw){try{const x=JSON.parse(raw);return {days:x?.days&&typeof x.days==='object'&&!Array.isArray(x.days)?x.days:{},dailyGoal:Number.isInteger(x?.dailyGoal)&&x.dailyGoal>=10&&x.dailyGoal<=290&&x.dailyGoal%10===0?x.dailyGoal:200,anchors:Array.isArray(x?.anchors)?x.anchors.filter(id=>habits.some(h=>h.id===id)):defaultAnchors};}catch{return {days:{},dailyGoal:200,anchors:[...defaultAnchors]};}}
 export function completed(state,key){return habits.filter(h=>['done','rest'].includes(state.days[key]?.[h.id])).length;}
 export function toggle(state,key,id,value='done'){state.days[key]??={};state.days[key][id]=state.days[key][id]===value?null:value;}
