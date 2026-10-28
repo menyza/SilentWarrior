@@ -24,7 +24,7 @@ cd /workspace/SilentWarrior/notifications
 npx wrangler d1 create silent-warrior-reminders
 ```
 
-להעתיק את database_id שחזר אל wrangler.jsonc במקום האפסים. לבדוק ש־APP_ORIGIN הוא מקור האתר המדויק ללא נתיב, וש־VAPID_SUBJECT הוא URL או mailto תקין. לאחר מכן:
+המסד silent-warrior-reminders כבר נוצר דרך האתר, ומזההו הוגדר ב־wrangler.jsonc. שם ה־Worker הוא silentwarrior כדי להתאים לפרויקט Workers Builds. אין ליצור מסד נוסף. לבדוק ש־APP_ORIGIN הוא מקור האתר המדויק ללא נתיב, וש־VAPID_SUBJECT הוא URL או mailto תקין. לאחר מכן:
 
 ```sh
 npm run keys
@@ -48,3 +48,5 @@ npx wrangler secret bulk .dev.vars
 ## חסמים שנותרו
 
 החשבון טרם חובר לסביבת העבודה, אין מזהה D1 אמיתי או סודות Worker פרוסים, ולא בוצעה מסירה לאייפון. API הפריסה דורש api.cloudflare.com. בדיקת שרת פרוס דורשת גם גישה לכתובת workers.dev המדויקת. הגדרות הצפנה ותזמון מקומיות אינן מחליפות פריסה ובדיקת מכשיר.
+
+בפריסה דרך GitHub: Root directory /notifications; Build command npm ci; Deploy command npx wrangler deploy. יש להחיל את migrations/0001_subscriptions.sql דרך D1 Console או באמצעות פקודת migrations לפני שימוש. פריסה רגילה אינה מחילה migrations אוטומטית.
