@@ -14,7 +14,13 @@ const main=document.querySelector('main');
 const dateLabel=k=>new Date(k+'T12:00:00').toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'});
 function save(){try{localStorage.setItem(storageKey,JSON.stringify(state));storageOK=true;}catch{storageOK=false;} }
 function toast(t){document.querySelector('#toast').textContent=t;clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>document.querySelector('#toast').textContent='',2400);}
-function card(h,key){const v=state.days[key]?.[h.id],done=['done','rest'].includes(v);return `<article class="habit ${done?'done':''}"><button class="check" data-check="${h.id}" aria-pressed="${done}" aria-label="${done?'ביטול':'סימון'} ${h.name}">${done?'✓':''}</button><div class="habit-copy"><strong>${h.name}</strong><small>${done?(v==='rest'?'מנוחה מתוכננת · נשמר':'הושלם · כל פעולה בונה את הבסיס'):h.group}</small></div><span class="habit-points">${done?'✓ ': '+'}${done?earnedPoints(h,v):h.points} נק׳</span>${h.exercise?`<button class="rest" data-rest="${h.id}" aria-pressed="${v==='rest'}">מנוחה · 10 נק׳</button>`:''}</article>`;}
+const tileLooks=[
+ [['💧','כוס מים'],['🌅','רגע להתעורר'],['🎵','מוזיקה'],['🧘','מתיחות בוקר'],['🌬️','5 נשימות'],['📵','בוקר בלי טלפון'],['🪥','צחצוח שיניים'],['🧴','טיפוח פנים'],['🛏️','סידור מיטה'],['🧹','סידור קצר'],['🍳','ארוחת בוקר'],['💊','תוספי בוקר']],
+ [['🥤','שייק וקריאטין'],['📖','קריאה'],['🏋️','אימון'],['🚶','הליכה יומית'],['⏰','יקיצה קבועה'],['🌙','שינה בזמן'],['🚰','מים לאורך היום'],['🏠','ניקוי הבית']],
+ [['🚿','מקלחת'],['🧴','טיפוח ערב'],['🥗','ארוחת ערב'],['💊','תוספי ערב'],['💆','מינוקסי'],['🧘','מתיחות ערב'],['🌬️','נשימת ערב'],['💬','קשר עם אדם קרוב'],['💧','מים ליד המיטה']]
+];
+function card(h,key){const v=state.days[key]?.[h.id],done=['done','rest'].includes(v),[g,i]=h.id.split('-').map(Number),[icon,title]=tileLooks[g][i];return `<article class="habit habit-tile ${done?'done':''}"><button class="tile-action" data-check="${h.id}" aria-pressed="${done}" aria-label="${done?'ביטול':'סימון'} ${h.name}"><span class="tile-status" aria-hidden="true">${done?'✓':'+'}</span><span class="tile-icon" aria-hidden="true">${icon}</span><strong>${title}</strong><span class="tile-caption">${done?(v==='rest'?'מנוחה מתוכננת':'הושלם'):'לחץ לסימון'}</span><span class="habit-points">${done?'✓ ': '+'}${done?earnedPoints(h,v):h.points} נק׳</span></button><button class="tile-info" data-info="${h.id}" aria-label="פרטים על ${h.name}">ⓘ</button>${h.exercise?`<button class="rest" data-rest="${h.id}" aria-pressed="${v==='rest'}">מנוחה · 10 נק׳</button>`:''}</article>`;}
+
 function render(){const key=page==='history'?selected:dayKey(),count=completed(state,key),score=dailyScore(state,key),goal=state.dailyGoal;
 document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);b.setAttribute('aria-current',b.dataset.page===page?'page':'false');});
 let html=`${!storageOK?'<aside class="warning" role="alert">השמירה במכשיר אינה זמינה. הסימונים עלולים להיעלם בסגירה.</aside>':''}`;
@@ -36,6 +42,8 @@ main.innerHTML=html;
 if(main.querySelector('.habit-panel'))main.querySelector('.habit-panel').scrollTop=scroll;
 }
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+if(b.dataset.info){const h=habits.find(h=>h.id===b.dataset.info);document.querySelector('#habit-detail-title').textContent=h.name;document.querySelector('#habit-detail-text').textContent=`${h.group} · ${h.points} נקודות · חשיבות ${h.importance} / 3 · מאמץ ${h.effort} / 3${h.exercise?' · אפשר לבחור יום מנוחה מתוכנן ב־10 נקודות.':''}`;document.querySelector('#habit-detail').showModal();return;}
+if(b.id==='close-detail'){document.querySelector('#habit-detail').close();return;}
 if(b.dataset.page||b.dataset.go){page=b.dataset.page||b.dataset.go;selected=dayKey();historyDetail=false;render();main.scrollTop=0;main.querySelector('.habit-panel')?.scrollTo(0,0);return;}
 if(b.dataset.period){periodMode=b.dataset.period;periodAnchor=dayKey();historyDetail=false;render();return;}
 if(b.dataset.shift){const next=movePeriod(periodMode,periodAnchor,Number(b.dataset.shift));if(periodDates(periodMode,next)[0]<=dayKey())periodAnchor=next;render();return;}
