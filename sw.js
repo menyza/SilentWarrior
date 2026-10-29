@@ -1,5 +1,5 @@
-const CACHE='silent-warrior-v4';
-const ASSETS=['./','index.html','style.css','app.js','account-ui.js','social-login.js','account-data.js','model.js','habit-catalog.js','analytics.js','weight.js','push-ui.js','reorder.js','manifest.webmanifest','icon-v3.svg','icon-192-v3.png','icon-512-v3.png','apple-touch-icon-v3.png'];
+const CACHE='silent-warrior-v7';
+const ASSETS=['./','index.html','style.css','app.js','account-ui.js','social-login.js','account-data.js','model.js','habit-catalog.js','analytics.js','weight.js','weight-view.js','theme.js','push-ui.js','reorder.js','manifest.webmanifest','icon-v3.svg','icon-192-v3.png','icon-512-v3.png','apple-touch-icon-v3.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('silent-warrior-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',event=>{

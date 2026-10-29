@@ -14,7 +14,7 @@ with sync_playwright() as p:
  assert page.locator('.daily-meter .track').count()==0
  assert page.locator('.daily-meter h2').count()==0
  page.locator('[data-check="0-0"]').click();assert page.get_by_role('progressbar').get_attribute('aria-valuenow')=='1'
- page.locator('[data-page="habits"]').click()
+ page.locator('[data-page="settings"]').click();page.locator('[data-page="habits"]').click()
  page.locator('.add-habit summary').click()
  page.locator('#habit-name').fill('ללמוד 10 דקות');page.locator('#habit-importance').select_option('3');page.locator('#habit-effort').select_option('2')
  assert '20' in page.locator('#new-habit-points').inner_text()
@@ -26,14 +26,14 @@ with sync_playwright() as p:
  page.locator(f'[data-check="{custom}"]').click();assert page.get_by_role('progressbar').get_attribute('aria-valuenow')=='2'
  page.reload();page.locator('[data-group="בוקר"]').click();page.locator('[data-habit-page="1"]').click()
  assert page.locator(f'[data-check="{custom}"]').get_attribute('aria-pressed')=='true'
- page.locator('[data-page="habits"]').click();page.locator('.manage-group summary').first.click();page.locator(f'[data-remove-habit="{custom}"]').click()
+ page.locator('[data-page="settings"]').click();page.locator('[data-page="habits"]').click();page.locator('.manage-group summary').first.click();page.locator(f'[data-remove-habit="{custom}"]').click()
  page.locator('[data-page="today"]').click();page.locator('[data-group="בוקר"]').click()
  assert page.locator(f'[data-check="{custom}"]').count()==0
  assert page.get_by_role('progressbar').get_attribute('aria-valuenow')=='1'
  page.locator('[data-page="history"]').click()
  assert '30 נק׳' in page.locator('.stat-grid').inner_text() or page.locator('.stat-grid b').first.inner_text()=='30'
  assert 'ללמוד 10 דקות' in page.locator('.progress-table').inner_text()
- page.locator('[data-page="habits"]').click();page.locator('.archived-habits summary').click();page.locator(f'[data-restore-habit="{custom}"]').click()
+ page.locator('[data-page="settings"]').click();page.locator('[data-page="habits"]').click();page.locator('.archived-habits summary').click();page.locator(f'[data-restore-habit="{custom}"]').click()
  page.locator('.add-habit summary').click();page.locator('#habit-name').fill('<img src=x onerror="window.hacked=true">');page.locator('#add-habit-form [type=submit]').click()
  page.locator('[data-page="today"]').click();page.locator('[data-group="בוקר"]').click();page.locator('[data-habit-page="1"]').click()
  assert page.locator('.compact-grid img').count()==0

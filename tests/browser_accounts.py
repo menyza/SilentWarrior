@@ -18,7 +18,7 @@ with sync_playwright() as p:
   if credential:cdp.send('WebAuthn.addCredential',{'authenticatorId':aid,'credential':credential})
   page.goto(origin)
   return context,page,cdp,aid
- def account(page):page.locator('[data-page="account"]').click()
+ def account(page):page.locator('[data-page="settings"]').click();page.locator('[data-page="account"]').click()
  def saved(page):page.wait_for_function("document.querySelector('#cloud-indicator').textContent==='שמור בחשבון'",timeout=30000)
  def doc(page):
   return page.evaluate("""async(api)=>{const a=JSON.parse(localStorage.getItem('silent-warrior-account-v1'));const r=await fetch(api+'/account/data',{headers:{Authorization:'Bearer '+a.token,'Content-Type':'application/json'}});return r.json()}""",api)

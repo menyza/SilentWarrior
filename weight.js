@@ -2,3 +2,6 @@ export function validDate(key){if(!/^\d{4}-\d{2}-\d{2}$/.test(key))return false;
 export function validWeight(value){return typeof value==='number'&&Number.isFinite(value)&&value>0&&value<=1000&&Math.abs(value*10-Math.round(value*10))<1e-8;}
 export function cleanWeights(raw){return raw&&typeof raw==='object'&&!Array.isArray(raw)?Object.fromEntries(Object.entries(raw).filter(([date,value])=>validDate(date)&&validWeight(value))):{};}
 export function weightRecords(weights){return Object.entries(weights).sort(([a],[b])=>b.localeCompare(a));}
+export function shiftedDate(key,days){const d=new Date(key+'T12:00:00');d.setDate(d.getDate()+days);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+export function weightStats(weights,today){const records=weightRecords(weights).filter(([date])=>date<=today),latest=records[0]||null,current=weights[today];const change=days=>current!==undefined&&weights[shiftedDate(today,-days)]!==undefined?Math.round((current-weights[shiftedDate(today,-days)])*10)/10:null;return {latest,daily:change(1),weekly:change(7)};}
+export function weightSeries(weights,today,period){const start=shiftedDate(today,-({week:6,month:29,year:364}[period]??6));return weightRecords(weights).filter(([date])=>date>=start&&date<=today).reverse();}

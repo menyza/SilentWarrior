@@ -8,7 +8,7 @@ async function schema(env){let pending=schemas.get(env.DB);if(!pending){pending=
 function response(data,status,origin){return new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Origin':origin,'Vary':'Origin'}});}
 async function json(request){if(!request.headers.get('Content-Type')?.startsWith('application/json'))throw new Error('invalid_request');const reader=request.body?.getReader();if(!reader)throw new Error('invalid_request');let length=0,text='';const decoder=new TextDecoder();while(true){const {done,value}=await reader.read();if(done)break;length+=value.length;if(length>1000000){await reader.cancel();throw new Error('body_too_large');}text+=decoder.decode(value,{stream:true});}return JSON.parse(text+decoder.decode());}
 const randomToken=()=>[...crypto.getRandomValues(new Uint8Array(32))].map(b=>b.toString(16).padStart(2,'0')).join('');
-async function session(request,env){const token=request.headers.get('Authorization')?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];if(!token)return null;return env.DB.prepare('SELECT a.id,a.display_name,s.token_hash FROM account_sessions s JOIN accounts a ON a.id=s.user_id WHERE s.token_hash=? AND s.expires_at>?').bind(await hash(token),Date.now()).first();}
+export async function accountSession(request,env){await schema(env);const token=request.headers.get('Authorization')?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];if(!token)return null;return env.DB.prepare('SELECT a.id,a.display_name,s.token_hash FROM account_sessions s JOIN accounts a ON a.id=s.user_id WHERE s.token_hash=? AND s.expires_at>?').bind(await hash(token),Date.now()).first();}
 async function startSession(userId,env){const token=randomToken(),user=await env.DB.prepare('SELECT id,display_name FROM accounts WHERE id=?').bind(userId).first();await env.DB.prepare('INSERT INTO account_sessions (token_hash,user_id,expires_at) VALUES (?,?,?)').bind(await hash(token),userId,Date.now()+30*24*60*60*1000).run();return {token,user:{id:user.id,displayName:user.display_name}};}
 async function rate(request,env,kind,limit){const bucket=await hash(`${request.headers.get('CF-Connecting-IP')||'local'}:${kind}:${Math.floor(Date.now()/3600000)}`);const row=await env.DB.prepare('INSERT INTO account_rate_limits(bucket,count,expires_at) VALUES (?,1,?) ON CONFLICT(bucket) DO UPDATE SET count=count+1 RETURNING count').bind(bucket,Date.now()+3600000).first();return row.count<=limit;}
 async function invite(data,env){if(data.enrollmentKey&&env.ENROLLMENT_KEY&&await hash(data.enrollmentKey)===await hash(env.ENROLLMENT_KEY))return true;if(typeof data.deviceToken==='string'&&/^[a-f0-9]{64}$/.test(data.deviceToken)){return !!await env.DB.prepare('SELECT id FROM subscriptions WHERE token_hash=?').bind(await hash(data.deviceToken)).first();}return false;}
@@ -24,7 +24,7 @@ export async function accountRequest(request,env){
    if(!await rate(request,env,'social',60))return response({error:'rate_limited'},429,origin);
    const config=socialConfig(env);if(!config)return response({error:'social_not_configured'},503,origin);
    const data=await json(request);if(!config.providers.includes(data.provider)||typeof data.pkce!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(data.pkce))return response({error:'invalid_data'},400,origin);
-   const owner=data.link?await session(request,env):null;if(data.link&&!owner)return response({error:'login_required'},401,origin);
+   const owner=data.link?await accountSession(request,env):null;if(data.link&&!owner)return response({error:'login_required'},401,origin);
    const id=crypto.randomUUID(),nonce=randomToken(),details={nonce,pkce:data.pkce,provider:data.provider,issuer:config.issuer,clientId:config.clientId,callback:config.callback};
    await env.DB.prepare('DELETE FROM account_challenges WHERE expires_at<?').bind(Date.now()).run();
    await env.DB.prepare('INSERT INTO account_challenges(id,challenge,kind,user_id,expires_at) VALUES (?,?,?,?,?)').bind(id,JSON.stringify(details),'social',owner?.id||null,Date.now()+600000).run();
@@ -37,7 +37,7 @@ export async function accountRequest(request,env){
    const pending=await challenge(env,data.state,'social');if(!pending)return response({error:'challenge_expired'},400,origin);
    const details=JSON.parse(pending.challenge);
    if(details.issuer!==config.issuer||details.clientId!==config.clientId||details.callback!==config.callback||!config.providers.includes(details.provider)||await pkceHash(data.verifier)!==details.pkce)return response({error:'social_authentication_failed'},400,origin);
-   const owner=pending.user_id?await session(request,env):null;if(pending.user_id&&owner?.id!==pending.user_id)return response({error:'login_required'},401,origin);
+   const owner=pending.user_id?await accountSession(request,env):null;if(pending.user_id&&owner?.id!==pending.user_id)return response({error:'login_required'},401,origin);
    let identity;try{identity=await socialIdentity(config,details,data.code,data.verifier);}catch{return response({error:'social_authentication_failed'},400,origin);}
    const existing=await env.DB.prepare('SELECT user_id FROM account_social_identities WHERE issuer=? AND subject=?').bind(identity.issuer,identity.subject).first();
    if(owner&&existing&&existing.user_id!==owner.id)return response({error:'identity_already_linked'},409,origin);
@@ -91,7 +91,7 @@ export async function accountRequest(request,env){
    const updated=await env.DB.prepare('UPDATE account_credentials SET counter=? WHERE id=? AND counter=? RETURNING id').bind(result.authenticationInfo.newCounter,cred.id,cred.counter).first();if(!updated)return response({error:'authentication_failed'},400,origin);
    return response(await startSession(cred.user_id,env),200,origin);
   }
-  const user=await session(request,env);if(!user)return response({error:'login_required'},401,origin);
+  const user=await accountSession(request,env);if(!user)return response({error:'login_required'},401,origin);
   if(path==='/account/me'&&request.method==='GET')return response({user:userOut(user)},200,origin);
   if(path==='/account/logout'&&request.method==='POST'){await env.DB.prepare('DELETE FROM account_sessions WHERE token_hash=?').bind(user.token_hash).run();return response({loggedOut:true},200,origin);}
   if(path==='/account/history'&&request.method==='GET'){const {results}=await env.DB.prepare('SELECT revision,created_at FROM account_document_history WHERE user_id=? ORDER BY revision DESC LIMIT 10').bind(user.id).all();return response({versions:results},200,origin);}

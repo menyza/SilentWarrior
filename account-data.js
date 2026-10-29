@@ -1,6 +1,6 @@
 import {load,habits} from './model.js';
 import {validDate,validWeight} from './weight.js';
-import {cleanCustomHabits} from './habit-catalog.js';
+import {cleanCustomHabits,cleanHabitOverrides} from './habit-catalog.js';
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const invalid=()=>{throw new Error('invalid_snapshot');};
@@ -10,6 +10,7 @@ export function normalizeSnapshot(raw){
  const input=raw.state,custom=cleanCustomHabits(input.customHabits||[]);
  if(!Array.isArray(input.customHabits||[])||custom.length!==(input.customHabits||[]).length)invalid();
  const ids=new Set([...habits,...custom].map(h=>h.id));
+ if(input.habitOverrides!==undefined&&(!object(input.habitOverrides)||Object.keys(cleanHabitOverrides(input.habitOverrides,ids)).length!==Object.keys(input.habitOverrides).length))invalid();
  if(!object(input.days||{})||!object(input.weights||{})||!object(input.reflections||{}))invalid();
  for(const [date,marks] of Object.entries(input.days||{})){if(!validDate(date)||!object(marks))invalid();for(const [id,status] of Object.entries(marks)){if(!ids.has(id)||!['done','rest',null].includes(status))invalid();}}
  for(const [date,value] of Object.entries(input.weights||{}))if(!validDate(date)||!validWeight(value))invalid();
@@ -22,7 +23,7 @@ export function normalizeSnapshot(raw){
  return {schemaVersion:1,state,order:[...new Set(raw.order)],reminders};
 }
 export function emptySnapshot(){return {schemaVersion:1,state:load(null),order:[],reminders:null};}
-export function meaningful(snapshot){const s=snapshot.state;return Object.values(s.days).some(m=>Object.values(m).some(v=>v==='done'||v==='rest'))||Object.keys(s.weights).length>0||Object.keys(s.reflections).length>0||s.customHabits.length>0||!equal(s.removedHabits,['0-1'])||s.dailyGoal!==200||snapshot.order.length>0||snapshot.reminders!==null;}
+export function meaningful(snapshot){const s=snapshot.state;return Object.values(s.days).some(m=>Object.values(m).some(v=>v==='done'||v==='rest'))||Object.keys(s.weights).length>0||Object.keys(s.reflections).length>0||s.customHabits.length>0||!equal(s.removedHabits,['0-1'])||s.dailyGoal!==200||Object.keys(s.habitOverrides||{}).length>0||snapshot.order.length>0||snapshot.reminders!==null;}
 // Three-way merge. Independent edits merge; conflicting values require an explicit choice.
 export function mergeSnapshots(base,local,remote,prefer='remote'){
  const conflicts=[];

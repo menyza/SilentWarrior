@@ -5,6 +5,7 @@ const SESSION='silent-warrior-account-v1',BASE='silent-warrior-account-base-v1',
 const API=()=>document.querySelector('meta[name="account-api"]')?.content||'https://silentwarrior.menyzakar142.workers.dev';
 let socialProviders=null;
 let hooks=null,auth=read(SESSION),baseline=read(BASE),pending=null,conflict=null,busy=false,syncing=false,dirty=false,syncRun=null,message='',phase=auth?.token?'checking':'guest',timer;
+export function pushAccount(){return auth?.token?{token:auth.token,id:auth.user.id,url:API()}:null;}
 function read(key){try{return JSON.parse(localStorage.getItem(key));}catch{return null;}}
 function store(key,value){localStorage.setItem(key,JSON.stringify(value));}
 const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);

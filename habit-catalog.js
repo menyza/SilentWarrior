@@ -5,3 +5,4 @@ export function addHabit(state,values){if(state.customHabits.length>=100)throw n
 export function archiveHabit(state,id){if(!state.removedHabits.includes(id))state.removedHabits.push(id);}
 export function restoreHabit(state,id){state.removedHabits=state.removedHabits.filter(value=>value!==id);}
 export const escapeHtml=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export function cleanHabitOverrides(raw,ids){if(!raw||typeof raw!=='object'||Array.isArray(raw))return {};return Object.fromEntries(Object.entries(raw).filter(([id,v])=>ids.has(id)&&v&&typeof v.name==='string'&&v.name.trim().length>0&&v.name.trim().length<=60&&habitGroups.includes(v.group)&&[1,2,3].includes(v.importance)&&[1,2,3].includes(v.effort)).map(([id,v])=>[id,{name:v.name.trim(),group:v.group,importance:v.importance,effort:v.effort,...(habitIcons.includes(v.icon)?{icon:v.icon}:{})}]));}

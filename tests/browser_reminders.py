@@ -14,8 +14,9 @@ with sync_playwright() as p:
   data={'publicKey':'B'*87} if req.url.endswith('/public-key') else {'token':'a'*64} if req.method=='POST' and req.url.endswith('/subscription') else {'status':'sent'} if req.url.endswith('/test') else {'saved':True}
   r.fulfill(status=200,content_type='application/json',headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'GET,POST,PUT,DELETE,OPTIONS'},body=json.dumps(data))
  page.route('https://test-reminders.workers.dev/**',route)
- page.goto(f'http://127.0.0.1:{server.server_port}');page.locator('[data-page="habits"]').click()
- assert page.locator('#push-test').is_disabled()
+ page.goto(f'http://127.0.0.1:{server.server_port}');page.locator('[data-page="settings"]').click();page.locator('[data-page="notifications"]').click()
+ assert page.locator('#push-test').is_enabled()
+ page.locator('#push-test').click();assert 'יש להפעיל התראות' in page.locator('#push-status').inner_text()
  page.locator('#push-url').fill('test-reminders.workers.dev');page.locator('#push-form [type=submit]').click();assert 'נדרש קוד החיבור' in page.locator('#push-status').inner_text();assert page.locator('#push-form [type=submit]').is_enabled();page.locator('#push-code').fill('local-test-code');page.evaluate("document.dispatchEvent(new Event('visibilitychange'))");assert page.locator('#push-code').input_value()=='local-test-code';assert page.locator('#push-url').input_value()=='test-reminders.workers.dev'
  page.locator('#push-form [type=submit]').click()
  page.wait_for_function("document.querySelector('#push-status').textContent.includes('ההרשמה נשמרה')")
@@ -27,10 +28,10 @@ with sync_playwright() as p:
  page.locator('[name=morning]').fill('09:15');page.locator('#push-form [type=submit]').click()
  page.wait_for_function("document.querySelector('#push-status').textContent.includes('עודכנו')")
  assert any(method=='PUT' for method,_,_ in calls)
- page.reload();page.locator('[data-page="habits"]').click()
+ page.reload();page.locator('[data-page="settings"]').click();page.locator('[data-page="notifications"]').click()
  assert page.locator('[name=morning]').input_value()=='09:15'
  page.locator('#push-disable').click();page.wait_for_function("document.querySelector('#push-status').textContent.includes('כובו')")
- assert page.locator('#push-test').is_disabled();assert page.evaluate('window.__unsubscribed')
+ assert page.locator('#push-test').is_enabled();assert page.evaluate('window.__unsubscribed')
  page.locator('#push-url').fill('https://example.com');page.locator('#push-form [type=submit]').click()
  assert 'Cloudflare Workers' in page.locator('#push-status').inner_text()
  page.locator('#push-url').fill('test-reminders.workers.dev');page.locator('#push-code').fill('local-test-code')

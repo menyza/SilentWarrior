@@ -32,7 +32,7 @@ with sync_playwright() as p:
   state=parse_qs(urlparse(route.request.url).query)['state'][0]
   route.fulfill(status=302,headers={'Location':origin+'/?state='+quote(state)+'&code=fixture-code'})
  context.route('https://identity.example.test/**',provider)
- page.goto(origin);page.locator('[data-page="account"]').click()
+ page.goto(origin);page.locator('[data-page="settings"]').click();page.locator('[data-page="account"]').click()
  with page.expect_response(lambda r:'/account/social/verify' in r.url):
   page.locator('#account-social-google').click()
  page.wait_for_function("document.querySelector('#cloud-indicator').textContent==='שמור בחשבון'")

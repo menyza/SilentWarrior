@@ -1,6 +1,7 @@
 import {Miniflare,convertV4MiniflareOptions} from 'miniflare';
 import webpush from 'web-push';
 import {createECDH,randomBytes} from 'node:crypto';
+import {hash} from '../src/core.js';
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 const keys=webpush.generateVAPIDKeys(),code=randomBytes(24).toString('hex'),origin='https://menyza.github.io';
@@ -14,5 +15,18 @@ try{
  assert.equal(registration.status,201);const {token}=await registration.json();
  const response=await request('/test','POST',null,{Authorization:`Bearer ${token}`});assert.equal(response.status,200);assert.equal(sent,1);
  assert.equal((await request('/subscription','DELETE',null,{Authorization:`Bearer ${token}`})).status,200);
+ await mf.dispatchFetch('https://service.workers.dev/account/status',{headers:{Origin:origin}});
+ const session='a'.repeat(64),other='b'.repeat(64);
+ for(const [id,value] of [['alice',session],['bob',other]]){
+  await db.prepare('INSERT INTO accounts(id,display_name,created_at) VALUES (?,?,?)').bind(id,id,Date.now()).run();
+  await db.prepare('INSERT INTO account_sessions(token_hash,user_id,expires_at) VALUES (?,?,?)').bind(await hash(value),id,Date.now()+60000).run();
+ }
+ const enrolled=await request('/push/subscription','POST',{subscription:{endpoint:'https://web.push.apple.com/account-runtime',keys:{p256dh:ec.getPublicKey().toString('base64url'),auth:randomBytes(16).toString('base64url')}},settings:{timeZone:'UTC',reminders:[{kind:'evening',time:'20:15'}]}},{Authorization:`Bearer ${session}`});
+ assert.equal(enrolled.status,201);const {id}=await enrolled.json(),device='/push/subscription/'+id;
+ assert.equal((await request(device,'DELETE',null,{Authorization:`Bearer ${other}`})).status,404);
+ assert.equal((await request(device,'PUT',{timeZone:'UTC',reminders:[]},{Authorization:`Bearer ${session}`})).status,200);
+ assert.equal((await request(device+'/test','POST',null,{Authorization:`Bearer ${session}`})).status,200);
+ assert.equal((await request(device,'DELETE',null,{Authorization:`Bearer ${session}`})).status,200);
+ console.log('PASS: account device registration, owner isolation, personal settings, test send and disable in real workerd/D1');
  console.log('PASS: actual Cloudflare workerd runtime, D1 registration, Node-compatible Web Push encryption and VAPID signing, mocked outbound transport, device revocation');
 }finally{await mf.dispose();}
