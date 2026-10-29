@@ -1,3 +1,4 @@
+import {socialConfig,socialAuthorization,socialIdentity,pkceHash} from './social-auth.js';
 import {generateRegistrationOptions,verifyRegistrationResponse,generateAuthenticationOptions,verifyAuthenticationResponse} from '@simplewebauthn/server';
 import {hash} from './core.js';
 import {accountSchema} from './account-schema.js';
@@ -18,6 +19,44 @@ export async function accountRequest(request,env){
  if(!env.DB)return response({error:'account_unavailable'},503,origin);
  try{
   await schema(env);const rpID=new URL(origin).hostname;
+  if(path==='/account/social/config'&&request.method==='GET'){const config=socialConfig(env);return response({providers:config?.providers||[]},200,origin);}
+  if(path==='/account/social/start'&&request.method==='POST'){
+   if(!await rate(request,env,'social',60))return response({error:'rate_limited'},429,origin);
+   const config=socialConfig(env);if(!config)return response({error:'social_not_configured'},503,origin);
+   const data=await json(request);if(!config.providers.includes(data.provider)||typeof data.pkce!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(data.pkce))return response({error:'invalid_data'},400,origin);
+   const owner=data.link?await session(request,env):null;if(data.link&&!owner)return response({error:'login_required'},401,origin);
+   const id=crypto.randomUUID(),nonce=randomToken(),details={nonce,pkce:data.pkce,provider:data.provider,issuer:config.issuer,clientId:config.clientId,callback:config.callback};
+   await env.DB.prepare('DELETE FROM account_challenges WHERE expires_at<?').bind(Date.now()).run();
+   await env.DB.prepare('INSERT INTO account_challenges(id,challenge,kind,user_id,expires_at) VALUES (?,?,?,?,?)').bind(id,JSON.stringify(details),'social',owner?.id||null,Date.now()+600000).run();
+   return response({state:id,url:socialAuthorization(config,data.provider,{state:id,nonce,pkce:data.pkce})},200,origin);
+  }
+  if(path==='/account/social/verify'&&request.method==='POST'){
+   if(!await rate(request,env,'social-verify',100))return response({error:'rate_limited'},429,origin);
+   const config=socialConfig(env);if(!config)return response({error:'social_not_configured'},503,origin);
+   const data=await json(request);if(typeof data.code!=='string'||data.code.length>4096||typeof data.verifier!=='string'||!/^[A-Za-z0-9_-]{43,128}$/.test(data.verifier))return response({error:'invalid_data'},400,origin);
+   const pending=await challenge(env,data.state,'social');if(!pending)return response({error:'challenge_expired'},400,origin);
+   const details=JSON.parse(pending.challenge);
+   if(details.issuer!==config.issuer||details.clientId!==config.clientId||details.callback!==config.callback||!config.providers.includes(details.provider)||await pkceHash(data.verifier)!==details.pkce)return response({error:'social_authentication_failed'},400,origin);
+   const owner=pending.user_id?await session(request,env):null;if(pending.user_id&&owner?.id!==pending.user_id)return response({error:'login_required'},401,origin);
+   let identity;try{identity=await socialIdentity(config,details,data.code,data.verifier);}catch{return response({error:'social_authentication_failed'},400,origin);}
+   const existing=await env.DB.prepare('SELECT user_id FROM account_social_identities WHERE issuer=? AND subject=?').bind(identity.issuer,identity.subject).first();
+   if(owner&&existing&&existing.user_id!==owner.id)return response({error:'identity_already_linked'},409,origin);
+   let userId=existing?.user_id||owner?.id;
+   if(!existing){
+    if(owner){await env.DB.prepare('INSERT OR IGNORE INTO account_social_identities(issuer,subject,user_id,provider,created_at) VALUES (?,?,?,?,?)').bind(identity.issuer,identity.subject,owner.id,details.provider,Date.now()).run();}
+    else{
+     const candidate=crypto.randomUUID(),now=Date.now();
+     // Both statements run in one D1 transaction; the UNIQUE issuer/sub key
+     // arbitrates concurrent first logins. Re-read the winner, never a loser ID.
+     await env.DB.batch([env.DB.prepare('INSERT OR IGNORE INTO accounts(id,display_name,created_at) SELECT ?,?,? WHERE NOT EXISTS (SELECT 1 FROM account_social_identities WHERE issuer=? AND subject=?)').bind(candidate,identity.name,now,identity.issuer,identity.subject),env.DB.prepare('INSERT OR IGNORE INTO account_social_identities(issuer,subject,user_id,provider,created_at) SELECT ?,?,?,?,? WHERE EXISTS (SELECT 1 FROM accounts WHERE id=?)').bind(identity.issuer,identity.subject,candidate,details.provider,now,candidate)]);
+    }
+    const linked=await env.DB.prepare('SELECT user_id FROM account_social_identities WHERE issuer=? AND subject=?').bind(identity.issuer,identity.subject).first();
+    if(owner&&linked?.user_id!==owner.id)return response({error:'identity_already_linked'},409,origin);
+    userId=linked?.user_id;
+   }
+   if(!userId)return response({error:'account_unavailable'},503,origin);
+   return response(await startSession(userId,env),200,origin);
+  }
   if(path==='/account/status'&&request.method==='GET')return response({available:true,method:'passkey',schemaVersion:1},200,origin);
   if(path==='/account/register/options'&&request.method==='POST'){
    if(!await rate(request,env,'register',20))return response({error:'rate_limited'},429,origin);

@@ -5,6 +5,7 @@
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "keep_vars": true,
   "triggers": {"crons": ["*/5 * * * *"]},
   "vars": {"APP_ORIGIN": "https://menyza.github.io", "VAPID_SUBJECT": "https://menyza.github.io/SilentWarrior/"},
   "d1_databases": [{"binding":"DB","database_name":"silent-warrior-reminders","database_id":"80e71a4f-738f-444e-a29d-518db36620e6","migrations_dir":"migrations"}]

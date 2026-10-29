@@ -9,7 +9,8 @@ import {allHabits,activeHabits,dayKey,load,completed,toggle,dailyScore,earnedPoi
 const storageKey='silent-warrior-v1';let state;let storageOK=true;
 try{state=load(localStorage.getItem(storageKey));}catch{state=load(null);storageOK=false;}
 let habits=allHabits(state),habitPage=0;
-let page='today',selected=dayKey(),group=new Date().getHours()<12?'בוקר':new Date().getHours()<18?'במהלך היום':'ערב';
+const loginReturn=new URLSearchParams(location.search);
+let page=loginReturn.has('state')&&(loginReturn.has('code')||loginReturn.has('error'))?'account':'today',selected=dayKey(),group=new Date().getHours()<12?'בוקר':new Date().getHours()<18?'במהלך היום':'ערב';
 let weightDate=dayKey();
 let periodMode='week',periodAnchor=dayKey(),historyDetail=false;
 const groups=['בוקר','במהלך היום','ערב'];

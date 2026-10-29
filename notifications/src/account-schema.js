@@ -1,5 +1,7 @@
 export const accountSchema = [
+
   "CREATE TABLE IF NOT EXISTS accounts (\n id TEXT PRIMARY KEY,\n display_name TEXT NOT NULL,\n created_at INTEGER NOT NULL\n)",
+  "CREATE TABLE IF NOT EXISTS account_social_identities (issuer TEXT NOT NULL, subject TEXT NOT NULL, user_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, provider TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(issuer,subject))",
   "CREATE TABLE IF NOT EXISTS account_credentials (\n id TEXT PRIMARY KEY,\n user_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,\n public_key TEXT NOT NULL,\n counter INTEGER NOT NULL DEFAULT 0,\n transports TEXT NOT NULL DEFAULT '[]',\n created_at INTEGER NOT NULL\n)",
   "CREATE INDEX IF NOT EXISTS account_credentials_user ON account_credentials(user_id)",
   "CREATE TABLE IF NOT EXISTS account_sessions (\n token_hash TEXT PRIMARY KEY,\n user_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,\n expires_at INTEGER NOT NULL\n)",
