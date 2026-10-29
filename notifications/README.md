@@ -52,3 +52,5 @@ npx wrangler secret bulk .dev.vars
 בפריסה דרך GitHub: Root directory /notifications; Build command npm ci; Deploy command npx wrangler deploy. יש להחיל את migrations/0001_subscriptions.sql דרך D1 Console או באמצעות פקודת migrations לפני שימוש. פריסה רגילה אינה מחילה migrations אוטומטית.
 
 חלופה להגדרת המפתחות דרך לוח Cloudflare: לפתוח את setup-notifications.html באתר GitHub Pages וליצור מפתחות בדפדפן. היצירה משתמשת ב־Web Crypto P-256 ובאקראיות קריפטוגרפית; אין בקשות רשת או שמירה מקומית של המפתחות. להעתיק את שלושת הערכים ל־Worker Settings / Variables and Secrets כסוג Secret, ולשמור עותק במנהל סיסמאות. אין ליצור זוג חדש לאחר הרשמת מכשירים אלא כחלק מסיבוב מפתחות מתוכנן. דף זה אינו חלק ממסכי האפליקציה או ממטמון ה־Service Worker.
+
+ה־Worker כולל כעת גם API חשבונות וסנכרון באותו DB. טבלאות נוספות נוצרות באופן לא הרסני בבקשת חשבון ראשונה; השירות הקיים לתזכורות נשאר באותו נתיב ובאותן הרשאות. ראו ../ACCOUNT-SETUP.md להפעלה ולבדיקות.

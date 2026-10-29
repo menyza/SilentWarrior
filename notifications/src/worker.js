@@ -1,3 +1,4 @@
+import {accountRequest} from './accounts.js';
 import webpush from 'web-push';
 import {settings,subscription,dueReminders,hash} from './core.js';
 function reply(data,status=200,origin){return new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store',...(origin?{'Access-Control-Allow-Origin':origin,'Vary':'Origin'}:{})}});}
@@ -12,6 +13,7 @@ export async function sendPush(row,env,payload,send=(...args)=>globalThis.fetch(
 export async function handle(request,env){
  const origin=request.headers.get('Origin');if(origin!==env.APP_ORIGIN)return reply({error:'origin_not_allowed'},403);
  if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'GET, POST, PUT, DELETE, OPTIONS','Access-Control-Allow-Headers':'Content-Type, Authorization, X-Enrollment-Key','Access-Control-Max-Age':'600','Vary':'Origin'}});
+ if(new URL(request.url).pathname.startsWith('/account/'))return accountRequest(request,env);
  if(!env.DB||!env.VAPID_PUBLIC_KEY||!env.VAPID_PRIVATE_KEY||!env.ENROLLMENT_KEY)return reply({error:'service_not_configured'},503,origin);
  const path=new URL(request.url).pathname;
  try{

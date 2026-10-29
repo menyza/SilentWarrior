@@ -1,0 +1,14 @@
+import {Miniflare,convertV4MiniflareOptions} from 'miniflare';
+import webpush from 'web-push';
+import {createServer} from 'node:http';
+import {readFileSync,writeFileSync,rmSync} from 'node:fs';
+import {resolve,extname} from 'node:path';
+const info='/tmp/silent-warrior-account-test.json';rmSync(info,{force:true});
+const root=resolve('..'),keys=webpush.generateVAPIDKeys();let apiURL;
+const staticServer=createServer((req,res)=>{try{const path=resolve(root,'.'+new URL(req.url,'http://localhost').pathname),file=path===root||req.url==='/'?resolve(root,'index.html'):path;if(!file.startsWith(root+'/')||file.includes('/.')){res.writeHead(403);res.end();return;}let content=readFileSync(file);if(file.endsWith('index.html'))content=Buffer.from(content.toString().replace('content="https://silentwarrior.menyzakar142.workers.dev"','content="'+apiURL+'"'));res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.webmanifest':'application/manifest+json','.png':'image/png'})[extname(file)]||'application/octet-stream');res.end(content);}catch{res.writeHead(404);res.end();}});
+await new Promise(resolve=>staticServer.listen(0,'127.0.0.1',resolve));const origin='http://localhost:'+staticServer.address().port;
+const mf=new Miniflare(convertV4MiniflareOptions({workers:[{name:'accounts-test',modules:true,scriptPath:'.wrangler/test-build/worker.js',compatibilityDate:'2026-10-01',compatibilityFlags:['nodejs_compat'],d1Databases:['DB'],bindings:{APP_ORIGIN:origin,VAPID_SUBJECT:origin,VAPID_PUBLIC_KEY:keys.publicKey,VAPID_PRIVATE_KEY:keys.privateKey,ENROLLMENT_KEY:'local-test-invite'},outboundService:async()=>new Response(null,{status:201})}]}));
+const db=await mf.getD1Database('DB');await db.exec(readFileSync('migrations/0001_subscriptions.sql','utf8').replace(/\n/g,' '));
+const bridge=createServer(async(req,res)=>{try{let chunks=[];for await(const c of req)chunks.push(c);const headers=Object.fromEntries(Object.entries(req.headers).filter(([,v])=>typeof v==='string'));const response=await mf.dispatchFetch('https://service.test'+req.url,{method:req.method,headers,...(['GET','HEAD'].includes(req.method)?{}:{body:Buffer.concat(chunks)})});res.writeHead(response.status,Object.fromEntries(response.headers));res.end(Buffer.from(await response.arrayBuffer()));}catch{res.writeHead(503);res.end('{}');}});
+await new Promise(resolve=>bridge.listen(0,'127.0.0.1',resolve));apiURL='http://127.0.0.1:'+bridge.address().port;writeFileSync(info,JSON.stringify({origin,api:apiURL}));console.log('Local account test services ready.');
+for(const signal of ['SIGINT','SIGTERM'])process.on(signal,async()=>{bridge.close();staticServer.close();await mf.dispose();rmSync(info,{force:true});process.exit(0);});
