@@ -31,7 +31,8 @@ with sync_playwright() as p:
  assert page.locator(f'[data-check="{custom}"]').count()==0
  assert page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuenow')=='1'
  page.locator('[data-page="history"]').click()
- assert '30 נק׳' in page.locator('.stat-grid').inner_text() or page.locator('.stat-grid b').first.inner_text()=='30'
+ assert page.locator('.period-points').inner_text()=='30'
+ page.locator('.review-table summary').click()
  assert 'ללמוד 10 דקות' in page.locator('.progress-table').inner_text()
  page.locator('[data-page="settings"]').click();page.locator('[data-page="habits"]').click();page.locator('.archived-habits summary').click();page.locator(f'[data-restore-habit="{custom}"]').click()
  page.locator('.add-habit summary').click();page.locator('#habit-name').fill('<img src=x onerror="window.hacked=true">');page.locator('#add-habit-form [type=submit]').click()

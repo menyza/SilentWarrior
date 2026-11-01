@@ -39,7 +39,7 @@ with sync_playwright() as p:
  assert int(page.locator('[data-gauge=daily] .score-ring>span').text_content().strip('%'))<100
  assert page.locator('[data-gauge=group] .score-ring>span').text_content()=='100%'
  page.locator('[data-group="ערב"]').click();assert page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuenow')=='0'
- page.locator('[data-page="history"]').click();assert int(page.locator('.stat-grid b').nth(1).inner_text())>0
+ page.locator('[data-page="history"]').click();assert int(page.locator('.total-points').inner_text())>0
  page.locator('[data-page="today"]').click();page.locator('[data-group="בוקר"]').click()
  assert '100 אחוזים' in page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuetext')
  page.reload();page.locator('[data-group="בוקר"]').click();assert page.locator('[data-gauge=group] .score-ring>span').text_content()=='100%'
