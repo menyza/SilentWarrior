@@ -41,3 +41,20 @@ html[data-theme=dark]{--surface:#202c42;--surface-soft:#293954;--ink:#e3eafb;--s
 @media(max-width:350px){.settings-tabs button{font-size:11px;padding:10px 8px}.weight-summary{padding:18px}.weight-inputs{grid-template-columns:1fr}.weight-inputs input{width:100%}}
 [data-theme=dark] .stat-grid>div{background:var(--surface)}[data-theme=dark] .stat-grid span,[data-theme=dark] :is(.table-help,.report-note,.progress-table small){color:var(--subtle)}[data-theme=dark] .report-scroll{background:var(--surface);border-color:var(--line)}[data-theme=dark] .progress-table :is(th,td){background:var(--surface);color:var(--ink);border-color:var(--line)}[data-theme=dark] .progress-table :is(thead th,.habit-column,.totals-row td,.totals-row th){background:#26354e}[data-theme=dark] .progress-table td.marked{background:#244d49;color:#bcead8}[data-theme=dark] .progress-table .is-today{background:#3b4b6d}[data-theme=dark] .progress-table .future{color:#8191ad;background:#1a253a}
 .daily-day-nav{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;margin:0 0 5px}.daily-day-nav button{min-height:44px;border:0;border-radius:11px;background:var(--surface-soft);color:var(--green);font:inherit;font-size:23px}.daily-day-nav button:disabled{opacity:.3;cursor:default}.daily-day-nav .selected-day{background:transparent;display:grid;place-content:center;gap:1px;padding:2px 4px;font-size:11px;color:var(--ink);line-height:1.5}.selected-day>span{font-size:10px;color:var(--subtle)}.selected-day time{font-weight:600}.today-title h1{margin-top:0}@media(max-height:600px){.daily-day-nav{margin-bottom:2px;gap:5px}.daily-day-nav .selected-day{font-size:10px}}
+
+.reminder-row{display:flex;align-items:end;gap:.6rem;flex-wrap:wrap;padding:.8rem 0;border-bottom:1px solid var(--border,#ddd)}.reminder-row label{flex:1;min-width:100px}.reminder-row input{width:100%;box-sizing:border-box}#workout-options{display:grid;gap:.6rem;margin-block:1rem}#workout-picker{max-width:90vw;width:340px}
+
+.reminder-days{flex-basis:100%;min-width:0;display:flex;flex-wrap:wrap;gap:.5rem;border:0;padding:0;margin:.5rem 0}.reminder-days label{display:flex;align-items:center;gap:.25rem;flex:0 0 auto;min-width:0}.reminder-days input{width:auto}.reminder-days legend{font-size:.85rem;margin-bottom:.5rem}
+
+/* Three independent summaries of the selected day and its calendar week. */
+.daily-meter.progress-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:2px 0 4px;width:100%}
+.progress-gauge{display:grid;justify-items:center;gap:3px;min-width:0;text-align:center;line-height:1.2}
+.progress-overview .score-ring{width:48px;height:48px;box-shadow:none}
+.progress-overview .score-ring>span{width:39px;height:39px;font-size:16px;gap:0}
+.progress-overview .score-ring small{font-size:9px}
+.progress-gauge>strong{font-size:10px;font-weight:600;color:var(--ink)}
+.progress-gauge>small{font-size:9px;color:var(--subtle)}
+.progress-gauge[data-gauge=daily] .score-ring{background:conic-gradient(#2aa98a var(--fill),var(--surface-soft,#e0e7f5) 0)}
+.progress-gauge[data-gauge=weekly] .score-ring{background:conic-gradient(#d6a039 var(--fill),var(--surface-soft,#e0e7f5) 0)}
+.today-title{margin-bottom:5px}.today-title h1{font-size:23px}.day-tabs{margin-top:7px}
+@media(max-height:700px){.progress-overview .score-ring{width:40px;height:40px}.progress-overview .score-ring>span{width:32px;height:32px;font-size:14px}.daily-meter.progress-overview{padding:1px 0 2px}.progress-gauge{gap:2px}.habit-panel .compact-grid{grid-template-rows:repeat(var(--rows),minmax(50px,1fr));gap:5px}.compact-grid .habit-tile,.compact-grid .tile-action{min-height:50px}.compact-grid .tile-action{padding:5px 3px 3px}.compact-grid .tile-icon{font-size:21px}.compact-grid .tile-action strong{font-size:10px}}

@@ -1,4 +1,5 @@
-import {load,habits} from './model.js';
+import {reminderSettings} from './reminder-settings.js';
+import {load,habits,workoutTypes} from './model.js';
 import {validDate,validWeight} from './weight.js';
 import {cleanCustomHabits,cleanHabitOverrides} from './habit-catalog.js';
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -15,15 +16,17 @@ export function normalizeSnapshot(raw){
  for(const [date,marks] of Object.entries(input.days||{})){if(!validDate(date)||!object(marks))invalid();for(const [id,status] of Object.entries(marks)){if(!ids.has(id)||!['done','rest',null].includes(status))invalid();}}
  for(const [date,value] of Object.entries(input.weights||{}))if(!validDate(date)||!validWeight(value))invalid();
  for(const [date,value] of Object.entries(input.reflections||{}))if(!validDate(date)||!['easy','busy','tired','forgot','other'].includes(value))invalid();
+ if(input.workouts!==undefined){if(!object(input.workouts))invalid();for(const [date,type] of Object.entries(input.workouts))if(!validDate(date)||(type!==null&&!workoutTypes.includes(type)))invalid();}
+ if(input.weeklyWorkoutGoal!==undefined&&(!Number.isInteger(input.weeklyWorkoutGoal)||input.weeklyWorkoutGoal<1||input.weeklyWorkoutGoal>7))invalid();
  if(!Number.isInteger(input.dailyGoal)||input.dailyGoal<10||input.dailyGoal>10000||input.dailyGoal%5)invalid();
  if(!Array.isArray(input.removedHabits||[])||(input.removedHabits||[]).some(id=>!ids.has(id)))invalid();
  if(raw.order.length>300||raw.order.some(id=>!ids.has(id)))invalid();
- let reminders=null;if(raw.reminders!==null&&raw.reminders!==undefined){const p=raw.reminders;if(!object(p)||typeof p.timeZone!=='string'||!Array.isArray(p.reminders)||p.reminders.length>2)invalid();try{new Intl.DateTimeFormat('en',{timeZone:p.timeZone});}catch{invalid();}const kinds=new Set();for(const r of p.reminders){if(!object(r)||!['morning','evening'].includes(r.kind)||kinds.has(r.kind)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(r.time))invalid();kinds.add(r.kind);}reminders={timeZone:p.timeZone,reminders:p.reminders.map(({kind,time})=>({kind,time}))};}
+ let reminders=null;if(raw.reminders!==null&&raw.reminders!==undefined){try{reminders=reminderSettings(raw.reminders);}catch{invalid();}}
  const state=load(JSON.stringify({...input,customHabits:custom}));
  return {schemaVersion:1,state,order:[...new Set(raw.order)],reminders};
 }
 export function emptySnapshot(){return {schemaVersion:1,state:load(null),order:[],reminders:null};}
-export function meaningful(snapshot){const s=snapshot.state;return Object.values(s.days).some(m=>Object.values(m).some(v=>v==='done'||v==='rest'))||Object.keys(s.weights).length>0||Object.keys(s.reflections).length>0||s.customHabits.length>0||!equal(s.removedHabits,['0-1'])||s.dailyGoal!==200||Object.keys(s.habitOverrides||{}).length>0||snapshot.order.length>0||snapshot.reminders!==null;}
+export function meaningful(snapshot){const s=snapshot.state;return Object.values(s.days).some(m=>Object.values(m).some(v=>v==='done'||v==='rest'))||Object.keys(s.weights).length>0||Object.keys(s.reflections).length>0||s.customHabits.length>0||!equal(s.removedHabits,['0-1'])||s.dailyGoal!==200||(s.weeklyWorkoutGoal||3)!==3||Object.keys(s.habitOverrides||{}).length>0||snapshot.order.length>0||snapshot.reminders!==null;}
 // Three-way merge. Independent edits merge; conflicting values require an explicit choice.
 export function mergeSnapshots(base,local,remote,prefer='remote'){
  const conflicts=[];

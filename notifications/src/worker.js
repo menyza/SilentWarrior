@@ -1,3 +1,4 @@
+import {reminderTopic} from '../../reminder-settings.js';
 import {accountSession,accountRequest} from './accounts.js';
 import webpush from 'web-push';
 import {settings,subscription,dueReminders,hash} from './core.js';
@@ -88,15 +89,21 @@ export async function handle(request,env){
  }catch(error){if(['push_provider_rejected','push_delivery_failed'].includes(error.message))return reply({error:error.message},502,origin);const invalid=['invalid_settings','invalid_timezone','invalid_reminder','invalid_subscription','invalid_endpoint','invalid_keys','json_required','body_too_large'].includes(error.message)||error instanceof SyntaxError;return reply({error:invalid?'invalid_request':'service_error'},invalid?400:503,origin);}
 }
 export async function scheduled(env,now=new Date()){
+ await env.DB.prepare('CREATE TABLE IF NOT EXISTS reminder_deliveries (subscription_id TEXT NOT NULL, reminder_id TEXT NOT NULL, local_date TEXT NOT NULL, claim TEXT NOT NULL, PRIMARY KEY(subscription_id,reminder_id,local_date))').run();
+ await env.DB.prepare('DELETE FROM reminder_deliveries WHERE local_date < ?').bind(new Date(now.getTime()-7*86400000).toISOString().slice(0,10)).run();
  let cursor='';
  while(true){
  const {results}=await env.DB.prepare('SELECT * FROM subscriptions WHERE id>? ORDER BY id LIMIT 100').bind(cursor).all();
  if(!results.length)break;cursor=results.at(-1).id;
  for(const row of results){let due;try{due=dueReminders(JSON.parse(row.settings),now);}catch{continue;}
-  for(const reminder of due){const column=reminder.kind==='morning'?'last_morning':'last_evening',claim=`${reminder.date}:${crypto.randomUUID()}`;
-   const claimed=await env.DB.prepare(`UPDATE subscriptions SET ${column} = ? WHERE id = ? AND (${column} IS NULL OR ${column} NOT LIKE ?) RETURNING id`).bind(claim,row.id,`${reminder.date}:%`).first();if(!claimed)continue;
-   try{await sendPush(row,env,{title:reminder.kind==='morning'?'בוקר טוב, הלוחם השקט':'רגע לשגרת הערב',body:'זמן לפעולה קטנה בשבילך. פותחים ובוחרים מה מתאים עכשיו.'});}
-   catch{await env.DB.prepare(`UPDATE subscriptions SET ${column} = NULL WHERE id = ? AND ${column} = ?`).bind(row.id,claim).run();}
+  for(const reminder of due){
+   const claim=crypto.randomUUID(),custom=!!reminder.id,column=reminder.kind==='morning'?'last_morning':'last_evening';
+   const claimed=custom
+    ?await env.DB.prepare('INSERT OR IGNORE INTO reminder_deliveries(subscription_id,reminder_id,local_date,claim) VALUES (?,?,?,?) RETURNING claim').bind(row.id,reminder.id,reminder.date,claim).first()
+    :await env.DB.prepare(`UPDATE subscriptions SET ${column} = ? WHERE id = ? AND (${column} IS NULL OR ${column} NOT LIKE ?) RETURNING id`).bind(`${reminder.date}:${claim}`,row.id,`${reminder.date}:%`).first();
+   if(!claimed)continue;
+   try{await sendPush(row,env,{title:reminderTopic(reminder),body:'זמן ל'+reminderTopic(reminder)+'. פותחים ובוחרים מה מתאים עכשיו.',tag:'reminder-'+(reminder.id||reminder.kind)});}
+   catch{if(custom)await env.DB.prepare('DELETE FROM reminder_deliveries WHERE subscription_id=? AND reminder_id=? AND local_date=? AND claim=?').bind(row.id,reminder.id,reminder.date,claim).run();else await env.DB.prepare(`UPDATE subscriptions SET ${column} = NULL WHERE id = ? AND ${column} = ?`).bind(row.id,`${reminder.date}:${claim}`).run();}
   }
  }
  }

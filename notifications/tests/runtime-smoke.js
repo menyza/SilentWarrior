@@ -1,3 +1,4 @@
+import {emptySnapshot} from '../../account-data.js';
 import {Miniflare,convertV4MiniflareOptions} from 'miniflare';
 import webpush from 'web-push';
 import {createECDH,randomBytes} from 'node:crypto';
@@ -21,6 +22,12 @@ try{
   await db.prepare('INSERT INTO accounts(id,display_name,created_at) VALUES (?,?,?)').bind(id,id,Date.now()).run();
   await db.prepare('INSERT INTO account_sessions(token_hash,user_id,expires_at) VALUES (?,?,?)').bind(await hash(value),id,Date.now()+60000).run();
  }
+ const snapshot=emptySnapshot();snapshot.state.weeklyWorkoutGoal=4;snapshot.state.days['2026-11-01']={'1-2':'done'};snapshot.state.workouts['2026-11-01']='טניס';snapshot.reminders={timeZone:'Asia/Jerusalem',reminders:[{id:'tennis',kind:'custom',topic:'טניס',time:'18:00',days:[1,3]}]};
+ assert.equal((await request('/account/data','PUT',{revision:0,snapshot},{Authorization:`Bearer ${session}`})).status,200);
+ const restored=await (await request('/account/data','GET',null,{Authorization:`Bearer ${session}`})).json();
+ assert.deepEqual(restored.snapshot,snapshot);
+ const otherDocument=await (await request('/account/data','GET',null,{Authorization:`Bearer ${other}`})).json();assert.equal(otherDocument.snapshot,null);
+ console.log('PASS: weekly workout target, workout type and personal weekday reminders persist in real D1 with owner isolation');
  const enrolled=await request('/push/subscription','POST',{subscription:{endpoint:'https://web.push.apple.com/account-runtime',keys:{p256dh:ec.getPublicKey().toString('base64url'),auth:randomBytes(16).toString('base64url')}},settings:{timeZone:'UTC',reminders:[{kind:'evening',time:'20:15'}]}},{Authorization:`Bearer ${session}`});
  assert.equal(enrolled.status,201);const {id}=await enrolled.json(),device='/push/subscription/'+id;
  assert.equal((await request(device,'DELETE',null,{Authorization:`Bearer ${other}`})).status,404);

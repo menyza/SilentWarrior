@@ -18,3 +18,35 @@ test('requires exact origin and enrollment; tokens manage only their own registr
 test('scheduled sends encrypted payload once per local date and clears expired devices; test endpoint throttles',async()=>{const env=environment(),token=await register(env);let sends=0;const oldFetch=globalThis.fetch;globalThis.fetch=async(url,options)=>{sends++;assert.equal(new URL(url).hostname,'web.push.apple.com');assert.ok(options.body.length>0);assert.match(options.headers.Authorization||options.headers.authorization,/vapid/);return new Response('',{status:201});};try{await scheduled(env,new Date('2026-10-28T06:00:00Z'));await scheduled(env,new Date('2026-10-28T06:05:00Z'));assert.equal(sends,1);const auth={Authorization:`Bearer ${token}`};assert.equal((await handle(req('/test','POST',null,auth),env)).status,200);assert.equal((await handle(req('/test','POST',null,auth),env)).status,429);globalThis.fetch=async()=>new Response(null,{status:410});const row=await env.DB.prepare('SELECT * FROM subscriptions').first();assert.equal(await sendPush(row,env,{title:'test'}),'expired');assert.equal(await env.DB.prepare('SELECT * FROM subscriptions').first(),null);}finally{globalThis.fetch=oldFetch;}});
 test('failed scheduled delivery is retried in the next due window',async()=>{const env=environment();await register(env);const oldFetch=globalThis.fetch;let tries=0;globalThis.fetch=async()=>{tries++;return new Response(null,{status:tries===1?503:201});};try{await scheduled(env,new Date('2026-10-28T06:00:00Z'));await scheduled(env,new Date('2026-10-28T06:05:00Z'));assert.equal(tries,2);}finally{globalThis.fetch=oldFetch;}});
 test('failed test delivery reports a useful error and allows an immediate retry',async()=>{const env=environment(),token=await register(env),auth={Authorization:`Bearer ${token}`},oldFetch=globalThis.fetch;try{globalThis.fetch=async()=>new Response(null,{status:403});const failed=await handle(req('/test','POST',null,auth),env);assert.equal(failed.status,502);assert.equal((await failed.json()).error,'push_provider_rejected');globalThis.fetch=async()=>new Response(null,{status:503});assert.equal((await (await handle(req('/test','POST',null,auth),env)).json()).error,'push_delivery_failed');globalThis.fetch=async()=>new Response(null,{status:201});assert.equal((await handle(req('/test','POST',null,auth),env)).status,200);}finally{globalThis.fetch=oldFetch;}});
+
+test('custom reminders preserve topics, send independently once per date, retry failures and respect removal',async()=>{
+ const env=environment(),token=await register(env),auth={Authorization:`Bearer ${token}`};
+ const reminders=[{id:'tennis',kind:'custom',time:'08:00',topic:'טניס'},{id:'water',kind:'custom',time:'08:00',topic:'שתיית מים'},{id:'later',kind:'custom',time:'09:00',topic:'שקילה'}];
+ const custom={timeZone:'UTC',reminders};
+ assert.deepEqual(settings(custom),custom);
+ assert.throws(()=>settings({...custom,reminders:[reminders[0],reminders[0]]}));
+ assert.throws(()=>settings({...custom,reminders:[{...reminders[0],topic:''}]}));
+ assert.equal((await handle(req('/subscription','PUT',custom,auth),env)).status,200);
+ const oldFetch=globalThis.fetch;let calls=0;
+ globalThis.fetch=async()=>{calls++;return new Response(null,{status:calls===1?503:201});};
+ try{
+  await scheduled(env,new Date('2026-11-01T08:00:00Z'));assert.equal(calls,2);
+  await scheduled(env,new Date('2026-11-01T08:05:00Z'));assert.equal(calls,3);
+  await scheduled(env,new Date('2026-11-01T08:06:00Z'));assert.equal(calls,3);
+  await handle(req('/subscription','PUT',{timeZone:'UTC',reminders:[]},auth),env);
+  await scheduled(env,new Date('2026-11-01T09:00:00Z'));assert.equal(calls,3);
+ }finally{globalThis.fetch=oldFetch;}
+});
+
+test('weekly reminders use the local weekday and retain late-night deliveries across midnight',()=>{
+ const reminders=[{id:'tennis',kind:'custom',topic:'טניס',time:'08:00',days:[1,3]}];
+ const weekly={timeZone:'Asia/Jerusalem',reminders};
+ assert.equal(dueReminders(weekly,new Date('2026-11-02T06:00:00Z')).length,1);
+ assert.equal(dueReminders(weekly,new Date('2026-11-03T06:00:00Z')).length,0);
+ assert.equal(dueReminders(weekly,new Date('2026-11-04T06:05:00Z')).length,1);
+ const night={timeZone:'Asia/Jerusalem',reminders:[{...reminders[0],time:'23:59'}]};
+ const due=dueReminders(night,new Date('2026-11-02T22:00:00Z'));
+ assert.equal(due.length,1);assert.equal(due[0].date,'2026-11-02');
+ assert.equal(dueReminders(night,new Date('2026-11-03T22:00:00Z')).length,0);
+ assert.equal(dueReminders(night,new Date('2026-11-02T22:10:00Z')).length,0);
+});

@@ -1,5 +1,5 @@
-const CACHE='silent-warrior-v8';
-const ASSETS=['./','index.html','style.css','app.js','account-ui.js','social-login.js','account-data.js','model.js','habit-catalog.js','analytics.js','weight.js','weight-view.js','theme.js','push-ui.js','reorder.js','manifest.webmanifest','icon-v3.svg','icon-192-v3.png','icon-512-v3.png','apple-touch-icon-v3.png'];
+const CACHE='silent-warrior-v11';
+const ASSETS=['./','index.html','style.css','app.js','account-ui.js','social-login.js','account-data.js','model.js','habit-catalog.js','analytics.js','weight.js','weight-view.js','theme.js','push-ui.js','reminder-settings.js','reorder.js','manifest.webmanifest','icon-v3.svg','icon-192-v3.png','icon-512-v3.png','apple-touch-icon-v3.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('silent-warrior-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',event=>{
@@ -15,7 +15,7 @@ self.addEventListener('push',event=>{
   body:typeof data.body==='string'?data.body:'רגע קטן לשגרה שלך. אפשר לפתוח ולסמן.',
   icon:new URL('icon-192-v3.png',self.registration.scope).href,
   badge:new URL('icon-192-v3.png',self.registration.scope).href,
-  tag:'silent-warrior-reminder',data:{url:self.registration.scope}
+  tag:typeof data.tag==='string'?data.tag:'silent-warrior-reminder',data:{url:self.registration.scope}
  }));
 });
 self.addEventListener('notificationclick',event=>{event.notification.close();event.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(async clients=>{const existing=clients.find(c=>c.url.startsWith(self.registration.scope));if(existing){await existing.focus();return;}return self.clients.openWindow(self.registration.scope);}));});
