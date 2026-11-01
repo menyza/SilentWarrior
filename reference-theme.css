@@ -1,0 +1,146 @@
+/* Reference-inspired typography and calm glass surfaces. All assets are local. */
+@font-face{font-family:Heebo;src:url('fonts/Heebo-variable.ttf') format('truetype');font-weight:100 900;font-style:normal;font-display:swap}
+:root{font-family:Heebo,Arial,sans-serif;--green:#196b59;--ink:#142333;--subtle:#5c6a76;--muted:#5c6a76;--surface:#fcfcfd;--surface-soft:#edf2f1;--line:#d9e2e0}
+body{background:#dfe6e9}
+.app{max-width:560px;background:linear-gradient(180deg,#b6c9dc 0,#e3dfe2 145px,#f5e2ce 215px,#537784 300px,#f6f6f7 440px);color:var(--ink)}
+header{height:86px;min-height:86px;padding:16px 20px;border:0;background:transparent}
+.brand{font-size:25px;font-weight:900;gap:10px;letter-spacing:-.8px;line-height:1.15;color:#122032}
+.brand small{font-size:10px;letter-spacing:1px;font-weight:500;color:#384658;margin-top:6px}
+.brand-icon{width:44px;height:44px;border-radius:13px;box-shadow:0 5px 12px #102a3b26}
+.cloud-indicator{background:#ffffff8c;border:1px solid #ffffffe0;border-radius:22px;padding:8px 12px;font-size:11px;color:#263849;box-shadow:0 3px 10px #3449570a;min-height:40px}
+.screen-top{padding:4px 18px 10px}
+.daily-day-nav{margin:0 0 16px;padding:4px;background:#ffffffa8;border:1px solid #ffffffe8;border-radius:20px;box-shadow:0 5px 15px #253b4a0a}
+.daily-day-nav button{background:transparent;color:#172b3e;border-radius:15px}
+.daily-day-nav .selected-day{font-size:13px;font-weight:750;line-height:1.5}
+.today-title{margin-bottom:14px;align-items:center}
+.today-title h1{font-size:30px;font-weight:900;letter-spacing:-.8px;color:#122032}
+.report-streak{font-size:11px;color:#253b49;font-weight:500;margin-top:5px}
+.today-title .day-count{border:1px solid #ffffffcc;background:#ffffffa6;color:#233a49;font-size:11px;border-radius:22px;padding:7px 12px}
+.daily-meter.progress-overview{padding:3px 0 16px;gap:10px}
+.progress-overview .score-ring{width:78px;height:78px;background:conic-gradient(#91df68 var(--fill),#ffffff44 0)!important;box-shadow:0 4px 18px #153c4320}
+.progress-overview .score-ring>span{width:63px;height:63px;background:#294d5c!important;color:#fff;font-size:25px;font-weight:850}
+.progress-overview .score-ring small{font-size:12px}
+.progress-gauge{gap:6px}
+.progress-gauge>strong{font-size:14px;font-weight:800;color:#fff;text-shadow:0 1px 4px #102a3e60}
+.progress-gauge>small{font-size:11px;color:#f4fafb;text-shadow:0 1px 3px #102a3e80}
+.day-tabs{background:#ffffff7d;border:1px solid #ffffffd9;border-radius:22px;padding:3px;margin-top:0;box-shadow:0 4px 16px #213e4812}
+.day-tabs button{min-height:52px;border-radius:19px;gap:7px;color:#1d3541}
+.day-tabs .selected{background:linear-gradient(135deg,#f1ffe4,#bde8b7);color:#173e2f;box-shadow:0 2px 8px #294f3920,inset 0 0 0 1px #ffffffbd}
+.day-tabs .daypart-name{font-size:13px;font-weight:800}
+.daypart-ring{background:conic-gradient(#3d8a67 var(--fill),#a6b9b050 0)}
+.daypart-ring>span{background:#eef5ed;font-weight:750;color:#1b4837}
+.habit-panel{padding:0 18px 22px;flex:1;overflow:auto;touch-action:pan-y}
+.habit-panel .section-title{margin:9px 0 12px}
+.section-title h2{font-size:21px;font-weight:850;letter-spacing:-.5px}
+.section-title .hint{font-size:11px;color:#405668}
+.habit-panel .compact-grid{grid-template-rows:repeat(var(--rows),minmax(122px,1fr));gap:9px;flex:0}
+.compact-grid .habit-tile{border-radius:21px;min-height:122px;box-shadow:0 6px 14px #20334212!important;border:1px solid #fff!important;overflow:hidden}
+.compact-grid .habit-tile:not(.done){background:linear-gradient(145deg,#fffaf5,#f0edef);--priority:#8b989b}
+.compact-grid .habit-tile.done:is(.points-5,.points-10,.points-15,.points-20,.points-25),.compact-grid .habit-tile.done{background:linear-gradient(145deg,#edf9dc,#c3e9bb);border-color:#f7fff0;--priority:#4b995e}
+.compact-grid .tile-action{min-height:122px;padding:23px 7px 10px;gap:5px;border-radius:20px}
+.compact-grid .tile-icon{font-size:35px;line-height:1.15;margin:0;filter:drop-shadow(0 2px 2px #23374913)}
+.compact-grid .tile-action strong{font-size:14px;line-height:1.25;font-weight:850;color:#182b3b}
+.compact-grid .habit-tile.done .tile-action strong{color:#234d36}
+.compact-grid .tile-action .habit-points,.compact-grid .habit-tile.done .tile-action .habit-points,.compact-grid .habit-tile:not(.done) .habit-points{font-size:11px;font-weight:750;border-radius:20px;padding:3px 12px;background:#ffffffb5;color:#293d48;box-shadow:0 3px 7px #27423509}
+.habit-streak{left:auto;right:7px;transform:none;top:6px;background:#ffffff9c;border:1px solid #ffffff9e;border-radius:13px;padding:1px 5px;font-size:10px;line-height:16px;color:#30483c}
+.compact-grid .tile-info{width:32px;height:32px;top:0;left:0;font-size:13px;padding:6px;color:#607483}
+nav{position:static;transform:none;width:100%;flex-shrink:0;background:#ffffffdc;border:1px solid #fff;border-bottom:0;border-radius:27px 27px 0 0;padding:9px 15px calc(9px + env(safe-area-inset-bottom));box-shadow:0 -6px 24px #31445208;gap:6px}
+nav button{min-height:60px;font-size:25px;border-radius:21px;color:#273847}
+nav button span{font-size:12px;font-weight:600;margin-top:2px}
+nav button.active{background:linear-gradient(145deg,#2e8872,#104b41);color:#fff;box-shadow:0 4px 10px #1c66562b}
+.settings-heading h1,.weight-screen h1,.review-top h1{font-weight:850;letter-spacing:-.7px}
+.settings-card,.review-card,.goal-settings,.review-stats>div,.weight-summary{border-radius:20px;box-shadow:0 4px 14px #233e4b08}
+[data-theme=dark]{--green:#91d7b0;--ink:#e9f2f4;--subtle:#aabcc8;--muted:#aabcc8;--surface:#1c303c;--surface-soft:#253e49;--line:#36525c}
+[data-theme=dark] .app{background:linear-gradient(#283e58,#233e4b 290px,#172833 460px);color:var(--ink)}
+[data-theme=dark] :is(.brand,.today-title h1){color:#f1f7fa}
+[data-theme=dark] :is(.brand small,.report-streak){color:#c7d9e2}
+[data-theme=dark] :is(.cloud-indicator,.daily-day-nav,.today-title .day-count,.day-tabs){background:#203a4cbd;color:#e6f1f5;border-color:#587280}
+[data-theme=dark] .daily-day-nav button{color:#e6f1f5}
+[data-theme=dark] .day-tabs .selected{background:#346752;color:#fff}
+[data-theme=dark] .day-tabs button{color:#d9e8e7}
+[data-theme=dark] .compact-grid .habit-tile:not(.done){background:linear-gradient(145deg,#263c49,#21343f);border-color:#49606c!important}
+[data-theme=dark] .compact-grid .habit-tile.done{background:linear-gradient(145deg,#335e40,#254b37);border-color:#608769!important}
+[data-theme=dark] .compact-grid .tile-action strong{color:#edf6f5}
+[data-theme=dark] .habit-streak{background:#172d39;color:#d6eadc;border-color:#536b60}
+[data-theme=dark] nav{background:#182c37;border-color:#36515e}
+[data-theme=dark] nav button{color:#c7d9e0}
+[data-theme=dark] nav button.active{color:#fff}
+@media(max-width:370px){header{padding-inline:14px}.brand{font-size:22px}.brand-icon{width:38px;height:38px}.screen-top,.habit-panel{padding-inline:12px}.progress-overview .score-ring{width:68px;height:68px}.progress-overview .score-ring>span{width:55px;height:55px;font-size:22px}.progress-gauge>strong{font-size:12px}.compact-grid .tile-action strong{font-size:12px}.day-tabs .daypart-name{font-size:11px}}
+@media(max-height:700px){header{height:70px;min-height:70px}.daily-day-nav{margin-bottom:9px}.today-title{margin-bottom:8px}.today-title h1{font-size:26px}.daily-meter.progress-overview{padding-bottom:10px}.progress-overview .score-ring{width:64px;height:64px}.progress-overview .score-ring>span{width:52px;height:52px;font-size:22px}.day-tabs button{min-height:46px}nav button{min-height:52px}}
+.panel-heading h2{font-size:19px;font-weight:850;color:var(--ink)}
+.panel-heading>span{font-size:11px;color:var(--subtle)}
+[data-theme=dark] .compact-grid .habit-tile.done:is(.points-5,.points-10,.points-15,.points-20,.points-25){background:linear-gradient(145deg,#335e40,#254b37)}
+[data-theme=dark] .compact-grid .habit-tile.done .tile-action strong{color:#e1f4df}
+[data-theme=dark] .compact-grid .habit-tile .tile-action .habit-points{background:#18332ca8;color:#deeee6}
+@media(max-height:700px){header{height:64px;min-height:64px}.screen-top{padding-top:2px;padding-bottom:7px}.daily-day-nav{margin-bottom:6px}.today-title h1{font-size:25px}.report-streak{font-size:10px}.progress-overview .score-ring{width:56px;height:56px}.progress-overview .score-ring>span{width:45px;height:45px;font-size:19px}.progress-gauge{gap:4px}.progress-gauge>strong{font-size:12px}.progress-gauge>small{font-size:10px}.daily-meter.progress-overview{padding-bottom:8px}.day-tabs button{min-height:44px}.habit-panel .compact-grid{grid-template-rows:repeat(var(--rows),minmax(88px,1fr))}.compact-grid .habit-tile,.compact-grid .tile-action{min-height:88px}.compact-grid .tile-action{padding:20px 5px 7px;gap:3px}.compact-grid .tile-icon{font-size:27px}.compact-grid .tile-action strong{font-size:12px}.compact-grid .tile-action .habit-points{font-size:10px;padding:1px 9px}nav{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom))}nav button{min-height:48px;font-size:22px}}
+[data-theme=dark] nav button.active{background:linear-gradient(145deg,#2e8872,#104b41);color:#fff}
+[data-theme=dark] .progress-overview .score-ring>span{background:#203e4c!important;color:#f2fbf6}
+
+/* Water logging has its own control; the progress ring is read-only. */
+.add-water-button{display:flex;align-items:center;gap:10px;width:100%;min-height:50px;margin-top:10px;padding:5px 12px;background:#ffffffbc;border:1px solid #fff;border-radius:19px;color:#163e45;text-align:right;box-shadow:0 4px 12px #203e4a0c}
+.add-water-button svg{width:29px;height:36px;flex-shrink:0}.add-water-button>span{font-size:13px;font-weight:800;flex:1}.add-water-button small{display:block;font-size:10px;font-weight:450;color:var(--subtle);margin-top:2px}.add-water-button>b{display:grid;place-items:center;width:29px;height:29px;background:#227664;border-radius:50%;color:white;font-size:21px;font-weight:500}
+.progress-overview .hydration-gauge{cursor:default}
+.tile-icon img{display:block;width:36px;height:36px;margin:auto;object-fit:contain;filter:drop-shadow(0 2px 2px #23374912);pointer-events:none}
+.nav-icon{width:26px;height:26px;display:block;margin:0 auto 3px}
+[data-theme=dark] .add-water-button{background:#25404d;border-color:#4b6872;color:#e3f3f1}
+@media(max-height:700px){.add-water-button{min-height:42px;margin-top:7px;padding-block:3px}.add-water-button small{display:none}.add-water-button svg{height:30px;width:24px}.tile-icon img{width:28px;height:28px}}
+
+/* The entire selected routine fits the viewport; only secondary screens scroll. */
+main:has(.screen-top):not(:has(.history-top)){overflow:hidden}
+.screen-top{position:relative}
+.today-title .add-water-button{width:44px;min-width:44px;min-height:44px;justify-content:center;padding:4px;margin:0;border-radius:15px;flex:0 0 44px}
+.today-title .add-water-button>span,.today-title .add-water-button>b{display:none}
+.today-title .add-water-button svg{width:28px;height:34px}
+.habit-panel.compact-panel{display:flex;flex-direction:column;overflow:hidden;padding-bottom:10px}
+.habit-panel .compact-grid{flex:1;min-height:0;grid-template-rows:repeat(var(--rows),minmax(0,1fr));gap:7px}
+.compact-grid .habit-tile,.compact-grid .tile-action{min-height:0}
+.compact-grid .tile-action{padding:18px 5px 5px;gap:3px;justify-content:center}
+header{height:68px;min-height:68px}
+.daily-day-nav{margin-bottom:9px}
+.today-title{margin-bottom:8px}
+.progress-overview .score-ring{width:66px;height:66px}
+.progress-overview .score-ring>span{width:53px;height:53px;font-size:23px}
+.daily-meter.progress-overview{padding-bottom:10px}
+@media(max-height:740px){header{height:52px;min-height:52px;padding-block:6px}.brand{font-size:22px}.brand-icon{width:36px;height:36px}.brand small{font-size:8px;margin-top:3px}.screen-top{padding-top:1px;padding-bottom:5px}.daily-day-nav{margin-bottom:4px;padding-block:0}.today-title{margin-bottom:5px}.today-title h1{font-size:24px}.report-streak{font-size:9px;margin-top:2px}.progress-overview .score-ring{width:52px;height:52px}.progress-overview .score-ring>span{width:42px;height:42px;font-size:19px}.progress-gauge{gap:3px}.progress-gauge>strong{font-size:11px}.progress-gauge>small{font-size:9px}.daily-meter.progress-overview{padding-bottom:6px}.day-tabs button{min-height:42px}.panel-heading h2{font-size:15px}.compact-panel .panel-heading{padding-block:5px}.compact-grid .tile-icon,.tile-icon img{font-size:25px;width:25px;height:25px}.compact-grid .tile-action strong{font-size:11px}.compact-grid .tile-action .habit-points{font-size:9px;padding:1px 7px}.habit-streak{font-size:8px;line-height:12px;top:3px;right:4px;padding:0 3px}.compact-grid .tile-action{padding:15px 3px 3px;gap:2px}.habit-panel .compact-grid{gap:5px}.compact-grid .habit-tile{border-radius:15px}nav{padding-block:5px}nav button{min-height:46px}.nav-icon{height:23px;width:23px}nav button span{font-size:10px}}
+@media(max-height:600px){header{height:44px;min-height:44px;padding-block:4px}.brand{font-size:19px}.brand small{display:none}.brand-icon{width:31px;height:31px}.cloud-indicator{min-height:32px;padding-block:5px;font-size:9px}.daily-day-nav button{min-height:38px}.daily-day-nav .selected-day{font-size:10px}.today-title h1{font-size:21px}.today-title .day-count{font-size:9px;min-height:36px;padding:4px 6px}.today-title .add-water-button{min-height:36px;min-width:36px;flex-basis:36px;width:36px}.today-title .add-water-button svg{height:28px;width:23px}.progress-overview .score-ring{width:44px;height:44px}.progress-overview .score-ring>span{width:35px;height:35px;font-size:16px}.progress-overview .score-ring small{font-size:8px}.progress-gauge>strong{font-size:10px}.progress-gauge>small{font-size:8px}.day-tabs button{min-height:36px}.day-tabs .daypart-name{font-size:10px}.daypart-ring{width:23px;height:23px}.daypart-ring>span{width:18px;height:18px;font-size:8px}.panel-heading h2{font-size:13px}.panel-heading>span{font-size:9px}.habit-panel.compact-panel{padding-bottom:5px}.habit-panel .compact-grid{gap:4px}.compact-grid .tile-action{padding:10px 2px 2px;gap:1px}.compact-grid .tile-icon,.tile-icon img{width:19px;height:19px;font-size:19px}.compact-grid .tile-action strong{font-size:10px;line-height:1.1}.compact-grid .tile-action .habit-points{font-size:8px;padding:0 5px}.habit-streak{font-size:7px;line-height:10px}.compact-grid .tile-info{font-size:10px;padding:3px;width:25px;height:25px}nav{padding-top:3px;padding-bottom:calc(3px + env(safe-area-inset-bottom))}nav button{min-height:42px}.nav-icon{height:20px;width:20px;margin-bottom:1px}}
+@media(min-height:601px) and (max-height:740px){.compact-grid .tile-action{padding:9px 2px 2px;gap:0}.compact-grid .tile-icon,.tile-icon img{width:22px;height:22px;font-size:22px}.compact-grid .tile-action strong{font-size:10px;line-height:1.05}.compact-grid .tile-action .habit-points{font-size:8px;line-height:1;padding:1px 6px}}
+
+.tile-icon{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-variant-emoji:emoji;display:grid;place-items:center;flex-shrink:0}
+.tile-icon .dumbbell-icon{width:1.5em;height:1em;display:block;overflow:visible}
+
+/* Restrained single-color icons, with no emoji artwork or decorative shadows. */
+.tile-icon{font-family:inherit;color:#466d71;filter:none;display:grid;place-items:center}
+.habit-line-icon{width:1em;height:1em;display:block;filter:none}
+.compact-grid .habit-tile.done .tile-icon{color:#2c6b4e}
+.flame-icon{width:12px;height:14px;display:inline-block;vertical-align:middle;flex-shrink:0}
+.habit-streak{display:flex;align-items:center;gap:2px;color:#547063;background:#ffffff80}
+.compact-grid .tile-action .habit-points{position:static;inset:auto;transform:none;margin:2px 0 0;line-height:1.1}
+[data-theme=dark] .tile-icon{color:#b2ced0}
+[data-theme=dark] .compact-grid .habit-tile.done .tile-icon{color:#a1d5b5}
+/* The local mountain image is cached with the application for offline use. */
+.app{background-color:#f6f6f7;background-image:linear-gradient(to bottom,#dce7ef99 0,#eef0f05c 135px,transparent 205px,#1c40572b 270px,#f6f6f700 330px,#f6f6f7 450px),url('images/mountain-sunrise.png');background-size:100% 460px,auto 460px;background-position:center top,center top;background-repeat:no-repeat}
+.progress-overview .score-ring>span{background:#244758ed!important}
+[data-theme=dark] .app{background-color:#172833;background-image:linear-gradient(to bottom,#162b4566,#142e4055 260px,#172833 450px),url('images/mountain-sunrise.png');background-size:100% 460px,auto 460px;background-position:center top;background-repeat:no-repeat}
+@media(max-height:700px){.app,[data-theme=dark] .app{background-size:100% 355px,auto 355px}.app{background-image:linear-gradient(to bottom,#dce7ef99 0,#eef0f05c 85px,transparent 140px,#1c40572b 210px,#f6f6f7 350px),url('images/mountain-sunrise.png')}[data-theme=dark] .app{background-image:linear-gradient(to bottom,#162b4566,#142e4055 200px,#172833 350px),url('images/mountain-sunrise.png')}}
+/* Muted natural colors distinguish habits without changing the neutral cards. */
+.habit-tile{--icon-color:#527a78}
+[data-habit-id="0-0"],[data-habit-id="1-6"],[data-habit-id="2-8"]{--icon-color:#438cad}
+[data-habit-id="0-2"]{--icon-color:#8777a1}
+[data-habit-id="0-3"],[data-habit-id="0-4"],[data-habit-id="2-5"],[data-habit-id="2-6"]{--icon-color:#67968b}
+[data-habit-id="0-5"]{--icon-color:#9b7b78}
+[data-habit-id="0-6"],[data-habit-id="2-0"]{--icon-color:#6b9ba8}
+[data-habit-id="0-7"],[data-habit-id="2-1"],[data-habit-id="2-4"]{--icon-color:#ab8e9c}
+[data-habit-id="0-8"]{--icon-color:#8d8eaf}
+[data-habit-id="0-9"],[data-habit-id="1-7"]{--icon-color:#b58b69}
+[data-habit-id="0-10"],[data-habit-id="2-2"]{--icon-color:#a29a5e}
+[data-habit-id="0-11"],[data-habit-id="2-3"]{--icon-color:#9b839e}
+[data-habit-id="0-12"],[data-habit-id="1-2"]{--icon-color:#6c8496}
+[data-habit-id="1-0"]{--icon-color:#b87987}
+[data-habit-id="1-1"]{--icon-color:#658ba4}
+[data-habit-id="1-3"]{--icon-color:#779267}
+[data-habit-id="1-4"]{--icon-color:#b67a70}
+[data-habit-id="1-5"]{--icon-color:#bb9b59}
+[data-habit-id="2-7"]{--icon-color:#8d8bb1}
+.compact-grid .habit-tile .tile-icon,.compact-grid .habit-tile.done .tile-icon{color:var(--icon-color);filter:none}
+.habit-line-icon{stroke-width:1.65;fill:color-mix(in srgb,currentColor 9%,transparent)}
+[data-theme=dark] .compact-grid .habit-tile .tile-icon{color:color-mix(in srgb,var(--icon-color) 70%,#fff)}

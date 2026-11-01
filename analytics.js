@@ -1,3 +1,4 @@
+import {validDate} from './weight.js';
 import {hasReport} from './hydration.js';
 import {dayKey,habits,allHabits,dailyScore,earnedPoints} from './model.js';
 export function shiftDay(key,amount){const d=new Date(key+'T12:00:00');d.setDate(d.getDate()+amount);return dayKey(d);}
@@ -36,4 +37,12 @@ export function reportingStreak(state,today=dayKey()){
  const dates=[...new Set([...Object.keys(state.days),...Object.keys(state.weights),...Object.keys(state.reflections),...Object.keys(state.water||{})])].filter(date=>date<=today&&hasReport(state,date)).sort();
  let best=0,run=0,previous;for(const date of dates){run=previous&&shiftDay(previous,1)===date?run+1:1;best=Math.max(best,run);previous=date;}
  const set=new Set(dates);let current=0,date=set.has(today)?today:shiftDay(today,-1);while(set.has(date)){current++;date=shiftDay(date,-1);}return {current,best};
+}
+
+// Calendar days since the first actual report; empty or undone days do not start a journey.
+export function journeyDay(state,date=dayKey()){
+ const dates=[...new Set([...Object.keys(state.days||{}),...Object.keys(state.water||{}),...Object.keys(state.weights||{}),...Object.keys(state.reflections||{})])].filter(k=>validDate(k)&&k<=dayKey()&&hasReport(state,k)).sort();
+ const start=dates[0]||dayKey();
+ const utc=k=>Date.parse(k+'T00:00:00Z');
+ return Math.max(1,Math.floor((utc(date)-utc(start))/86400000)+1);
 }

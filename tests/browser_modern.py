@@ -21,6 +21,7 @@ with sync_playwright() as p:
  page.locator('[data-check="0-12"]').click();assert ', 0 מתוך' in page.locator('[data-group="בוקר"]').get_attribute('aria-label')
  page.locator('[data-check="0-12"]').click();assert page.locator('#quick-weight').input_value()=='75.5'
  page.locator('#weigh-in-form [type=submit]').click()
+ page.locator('[data-check="0-0"]').scroll_into_view_if_needed()
  first=page.locator('[data-check="0-0"]').bounding_box();target=page.locator('[data-check="0-3"]').bounding_box()
  page.locator('[data-check="0-0"]').dispatch_event('pointerdown',{'pointerId':1,'pointerType':'touch','isPrimary':True,'button':0,'clientX':first['x']+first['width']/2,'clientY':first['y']+first['height']/2})
  page.wait_for_timeout(420);assert page.locator('.drag-ghost').count()==1
@@ -36,7 +37,7 @@ with sync_playwright() as p:
   page.set_viewport_size({'width':w,'height':h})
   for g in ['בוקר','במהלך היום','ערב']:
    page.locator(f'[data-group="{g}"]').click()
-   dims=page.locator('.habit-panel').evaluate('(e)=>[e.scrollHeight,e.clientHeight]');assert dims[0]<=dims[1]+1,(w,h,g,dims)
+   dims=page.locator('.habit-panel').evaluate('(e)=>[e.scrollHeight,e.clientHeight]');assert dims[0]<=dims[1]+1,(w,h,dims)
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
  page.emulate_media(reduced_motion='reduce');page.locator('[data-group="בוקר"]').click();page.locator('[data-check="0-2"]').click()
  assert page.locator('.celebration').count()==0
