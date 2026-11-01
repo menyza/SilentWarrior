@@ -186,3 +186,37 @@ header{height:68px;min-height:68px}
 #custom-workout-form button{min-height:44px;border:0;border-radius:8px;background:#276d59;color:#fff;font:inherit}
 #custom-workout-status{font-size:12px;line-height:1.5;margin:0}
 #workout-options button{min-width:0;overflow-wrap:anywhere}
+/* Compact drink picker: fixed-size choices and a separate paged history view. */
+#water-dialog{width:350px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 28px);padding:14px;overflow:hidden;border-radius:20px;background:var(--surface);color:var(--ink)}
+.water-dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#water-dialog .water-dialog-heading h2{font-size:20px;line-height:1.4;margin:0}
+.water-dialog-heading>small{font-size:11px;color:var(--subtle);white-space:nowrap}
+#water-dialog .water-total{font-size:19px;line-height:1.4;margin:3px 0 6px}
+.water-dialog-track{height:6px;background:var(--line);border-radius:8px;overflow:hidden}
+.water-dialog-track>span{display:block;height:100%;border-radius:8px;background:#439d80;transition:width .3s ease;max-width:100%}
+#water-dialog #drink-feedback{display:flex;align-items:center;min-height:38px;margin:7px 0;padding:5px 8px;border-radius:9px;font-size:11px;line-height:1.4;color:var(--subtle);border:1px solid transparent;background:var(--surface-soft)}
+#water-dialog #drink-feedback.saved{background:#e3f4e7;color:#245f3c;border-color:#a1ceb2}
+#water-dialog #drink-feedback.failed{background:#fff0eb;color:#8a3523;border-color:#dca18e}
+#water-dialog .drink-presets{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0}
+#water-dialog .drink-presets button{min-height:66px;padding:6px 2px;gap:2px;border-radius:12px;border-width:1px;font-size:11px;position:relative}
+#water-dialog .drink-presets button>span{font-size:21px;line-height:1.1}
+#water-dialog .drink-presets button>b{font-size:11px;font-weight:650;line-height:1.2}
+#water-dialog .drink-presets button>small{font-size:10px;margin:0;line-height:1.2}
+#water-dialog .drink-presets .drink-added{animation:drink-confirm .45s ease-out;border-color:#4c946a;background:#e3f4e7}
+#water-dialog #drink-form label{margin:7px 0 4px;font-size:11px}
+.drink-custom-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr) auto;gap:6px;align-items:center}
+#water-dialog #drink-form :is(input,select){min-height:40px;height:40px;padding:5px 6px;width:100%;font-size:16px}
+.drink-custom-row button{min-height:40px;border:0;border-radius:9px;background:#276d59;color:#fff;font:inherit;font-size:12px;padding:7px 10px}
+.water-dialog-actions{display:flex;gap:6px;margin-top:10px}
+#water-dialog .water-dialog-actions button{flex:1;width:auto;min-height:40px;padding:7px;border:0;border-radius:9px;background:var(--surface-soft);color:var(--ink);font:inherit;font-size:12px}
+#water-dialog .water-dialog-actions #close-water{background:#276d59;color:#fff}
+.drink-history-list{height:204px;margin-top:10px}
+#water-dialog .drink-record{min-height:50px;font-size:12px}
+.drink-record small{display:block;font-size:10px;color:var(--subtle)}
+.water-history-pages{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}
+.water-history-pages button{min-height:36px;border:0;border-radius:8px;background:var(--surface-soft);color:var(--ink);font:inherit;font-size:12px;padding:5px 10px}
+.water-history-pages button:disabled{opacity:.35}
+@keyframes drink-confirm{0%{transform:scale(.94)}45%{transform:scale(1.04);box-shadow:0 0 0 3px #4c946a33}100%{transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){#water-dialog .drink-presets .drink-added{animation:none}.water-dialog-track>span{transition:none}}
+[data-theme=dark] #water-dialog #drink-feedback.saved,[data-theme=dark] #water-dialog .drink-presets .drink-added{background:#264937;color:#d7f0df;border-color:#699c7c}
+@media(max-height:600px){#water-dialog{padding:11px}.water-dialog-heading h2{font-size:18px}#water-dialog .drink-presets button{min-height:60px}.water-dialog-actions{margin-top:8px}}

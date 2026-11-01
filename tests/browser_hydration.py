@@ -25,11 +25,11 @@ with sync_playwright() as p:
  page.locator('[data-group="בוקר"]').click();assert page.locator('[data-habit-id="0-0"] .habit-streak').inner_text()=='3'
  page.locator('[data-check="0-0"]').click();assert '2200 / 2000' in page.locator('[data-gauge=water]').inner_text()
  page.locator('[data-check="0-0"]').click();assert '2450 / 2000' in page.locator('[data-gauge=water]').inner_text()
- page.locator('#open-water').click();page.locator('.drink-history summary').click()
+ page.locator('#open-water').click();page.locator('#water-history').click()
  entries=page.evaluate("JSON.parse(localStorage.getItem('silent-warrior-v1')).water['2026-11-04']")
  coffee=next(key for key,value in entries.items() if value and value['kind']=='coffee')
  page.locator(f'[data-remove-drink="{coffee}"]').click()
- page.locator('#drink-kind').select_option('tea');page.locator('#drink-ml').fill('375');page.locator('#drink-form [type=submit]').click();assert 'נוספו 375' in page.locator('#drink-feedback').inner_text();page.locator('#close-water').click()
+ page.locator('#water-add-view').click();page.locator('#drink-kind').select_option('tea');page.locator('#drink-ml').fill('375');page.locator('#drink-form [type=submit]').click();assert 'נוספו 375' in page.locator('#drink-feedback').inner_text();page.locator('#close-water').click()
  assert '2625 / 2000' in page.locator('[data-gauge=water]').inner_text()
  page.locator('[data-page="settings"]').click();page.locator('#water-goal').fill('3000');page.locator('#water-goal-form [type=submit]').click()
  page.reload();page.locator('[data-page="today"]').click();assert '2625 / 3000' in page.locator('[data-gauge=water]').inner_text()

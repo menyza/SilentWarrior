@@ -1,6 +1,6 @@
 import {habitEmoji,flameIcon} from './emoji.js';
 import {waterButton,waterDialog} from './hydration-view.js';
-import {addDrink,removeDrink,waterDay} from './hydration.js';
+import {addDrink,removeDrink,waterDay,completeWaterHabit} from './hydration.js';
 import {initUsage} from './usage.js';
 import {downloadExcel} from './excel-export.js';
 import {reviewScreen} from './progress-view.js';
@@ -42,7 +42,7 @@ function habitManager(){return `<section class="habit-manager"><h2>ניהול ה
 
 const main=document.querySelector('main');
 const dateLabel=k=>new Date(k+'T12:00:00').toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'});
-function save(){try{localStorage.setItem(storageKey,JSON.stringify(state));storageOK=true;document.dispatchEvent(new CustomEvent('local-data-changed'));}catch{storageOK=false;} }
+function save(){completeWaterHabit(state,habitDate());try{localStorage.setItem(storageKey,JSON.stringify(state));storageOK=true;document.dispatchEvent(new CustomEvent('local-data-changed'));}catch{storageOK=false;} }
 function toast(t){document.querySelector('#toast').textContent=t;clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>document.querySelector('#toast').textContent='',2400);}
 function reward(h,key,before,after){
 const tile=document.querySelector(`[data-check="${h.id}"]`)?.closest('.habit-tile');
@@ -97,11 +97,12 @@ main.innerHTML=html;if(preserveDrafts)main.querySelectorAll('details').forEach((
 if(main.querySelector('.habit-panel'))main.querySelector('.habit-panel').scrollTop=scroll;
 }
 function renderWorkoutOptions(){document.querySelector('#workout-options').innerHTML=availableWorkoutTypes(state).map(type=>`<button data-workout="${escapeHtml(type)}">${escapeHtml(type)}</button>`).join('')+'<button type="button" data-workout-rest>יום מנוחה</button><p class="hint workout-rest-note">מנוחה משלימה את ההרגל היומי ואינה נספרת ביעד האימונים השבועי.</p>';}
-function refreshWater(reset=false){const dialog=document.querySelector('#water-dialog'),open=dialog.querySelector('.drink-history')?.open,scroll=dialog.scrollTop;dialog.innerHTML=waterDialog(state,dialog.dataset.date);if(!reset&&open)dialog.querySelector('.drink-history').open=true;dialog.scrollTop=reset?0:scroll;}
+function refreshWater(reset=false){const dialog=document.querySelector('#water-dialog');if(reset){dialog.dataset.view='add';dialog.dataset.historyPage='0';}dialog.innerHTML=waterDialog(state,dialog.dataset.date,{view:dialog.dataset.view||'add',page:Number(dialog.dataset.historyPage)||0});dialog.scrollTop=0;}
 function waterOwnerValid(){const dialog=document.querySelector('#water-dialog');if(dialog.dataset.owner!==(pushAccount()?.id||'')){dialog.close();toast('החשבון השתנה. יש לפתוח שוב את מעקב השתייה.');return false;}return true;}
-function saveDrink(kind,ml){if(!waterOwnerValid())return;const date=document.querySelector('#water-dialog').dataset.date;try{addDrink(state,date,kind,ml);save();render();refreshWater(true);const feedback=document.querySelector('#drink-feedback');feedback.hidden=false;feedback.className=storageOK?'drink-feedback saved':'drink-feedback failed';feedback.textContent=storageOK?`נוספו ${ml} מ״ל · סך השתייה כעת ${waterDay(state,date).total.toLocaleString('he-IL')} מ״ל`:'לא ניתן לשמור במכשיר. הנתונים לא נשמרו.';if(storageOK){const preset=[...document.querySelectorAll('[data-drink-kind]')].find(b=>b.dataset.drinkKind===kind&&Number(b.dataset.drinkMl)===ml);if(preset){preset.classList.add('drink-added');preset.insertAdjacentHTML('beforeend','<small class=drink-added-label>✓ נוסף</small>');}}}catch(error){toast(error.message);}}
+function saveDrink(kind,ml){if(!waterOwnerValid())return;const date=document.querySelector('#water-dialog').dataset.date;try{addDrink(state,date,kind,ml);save();render();refreshWater(true);const feedback=document.querySelector('#drink-feedback');feedback.hidden=false;feedback.className=storageOK?'drink-feedback saved':'drink-feedback failed';feedback.textContent=storageOK?`נוספו ${ml} מ״ל · ${waterDay(state,date).total.toLocaleString('he-IL')} מ״ל בסך הכול${waterDay(state,date).total>=state.waterGoal?' · היעד הושלם ✓':''}`:'לא ניתן לשמור במכשיר. הנתונים לא נשמרו.';if(storageOK){const preset=[...document.querySelectorAll('[data-drink-kind]')].find(b=>b.dataset.drinkKind===kind&&Number(b.dataset.drinkMl)===ml);if(preset){preset.classList.add('drink-added');preset.querySelector('small').textContent='✓ נוסף';}}}catch(error){toast(error.message);}}
 document.addEventListener('click',e=>{const b=e.target.closest('button,[data-edit-weight],[data-report-day],[data-water-date]');if(!b)return;
 if(b.id==='open-water'||b.dataset.waterDate){e.preventDefault();const dialog=document.querySelector('#water-dialog');dialog.dataset.date=b.dataset.waterDate||habitDate();dialog.dataset.owner=pushAccount()?.id||'';refreshWater(true);dialog.showModal();dialog.scrollTop=0;return;}
+if(b.id==='water-history'||b.id==='water-add-view'||b.hasAttribute('data-water-history-page')){const dialog=document.querySelector('#water-dialog');dialog.dataset.view=b.id==='water-add-view'?'add':'history';dialog.dataset.historyPage=b.dataset.waterHistoryPage||'0';refreshWater();return;}
 if(b.id==='close-water'){document.querySelector('#water-dialog').close();return;}
 if(b.dataset.drinkMl){saveDrink(b.dataset.drinkKind,Number(b.dataset.drinkMl));return;}
 if(b.dataset.removeDrink){if(!waterOwnerValid())return;removeDrink(state,document.querySelector('#water-dialog').dataset.date,b.dataset.removeDrink);save();render();refreshWater();return;}

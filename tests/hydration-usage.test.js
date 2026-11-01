@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {load,toggle} from '../model.js';
-import {addDrink,removeDrink,waterDay} from '../hydration.js';
+import {addDrink,removeDrink,waterDay,completeWaterHabit} from '../hydration.js';
 import {reportingStreak,streaks} from '../analytics.js';
 import {emptySnapshot,normalizeSnapshot,mergeSnapshots} from '../account-data.js';
 import {waterSeries,completionSeries} from '../trend-charts.js';
@@ -37,4 +37,13 @@ test('usage counts foreground entries once, pauses background/idle time and neve
  tracker.visibility(true);await tracker.flush();assert.equal(calls.at(-1).sessions[0].id,two);
  account={id:'B',token:'tokenB'};tracker.tick();await tracker.flush();assert.equal(calls.at(-1).owner,'B');assert.equal(calls.at(-1).sessions[0].activeMs,0);
  assert.equal(activeDuration(120000,0,135000,true),0);assert.equal(activeDuration(0,0,15000,false),0);
+});
+
+test('Daily water habit completes at the target from drinks or automatic contributions without adding water',()=>{
+ const state=load(null);state.waterGoal=500;
+ addDrink(state,date,'coffee',200,1,one);assert.notEqual(state.days[date]?.['1-6'],'done');
+ state.days[date]??={};state.days[date]['0-0']='done';assert.equal(completeWaterHabit(state,date),false);
+ addDrink(state,date,'water',50,2,two);assert.equal(state.days[date]['1-6'],'done');assert.equal(waterDay(state,date).total,500);assert.equal(completeWaterHabit(state,date),false);
+ const automatic=load(null);automatic.waterGoal=500;automatic.days[date]={'1-0':'done'};assert.equal(completeWaterHabit(automatic,date),true);assert.equal(waterDay(automatic,date).total,500);
+ const archived=load(null);archived.removedHabits.push('1-6');archived.waterGoal=500;archived.days[date]={'1-0':'done'};assert.equal(completeWaterHabit(archived,date),false);
 });
