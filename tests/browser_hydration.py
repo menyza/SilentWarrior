@@ -50,6 +50,14 @@ with sync_playwright() as p:
  assert 'יום מנוחה' in page.locator('[data-check="1-2"]').inner_text()
  assert page.evaluate("JSON.parse(localStorage.getItem('silent-warrior-v1')).days['2026-11-04']['1-2']")== 'rest'
  page.locator('[data-check="1-2"]').click();assert page.locator('[data-check="1-2"]').get_attribute('aria-pressed')=='false'
+ page.locator('[data-check="1-2"]').click()
+ for kind in ['יוגה','הליכה','שחייה']: assert page.locator(f'[data-workout="{kind}"]').count()==1
+ page.locator('#add-workout-type').click();page.locator('#custom-workout-name').fill('פילאטיס');page.locator('#custom-workout-form [type=submit]').click()
+ assert 'נוסף לרשימה' in page.locator('#custom-workout-status').inner_text()
+ page.locator('[data-workout="פילאטיס"]').click();assert 'פילאטיס' in page.locator('[data-check="1-2"]').inner_text()
+ page.reload();page.locator('[data-group="במהלך היום"]').click();assert 'פילאטיס' in page.locator('[data-check="1-2"]').inner_text()
+ page.locator('[data-check="1-2"]').click();page.locator('[data-check="1-2"]').click();assert page.locator('[data-workout="פילאטיס"]').count()==1
+ page.locator('#cancel-workout').click()
  assert not errors,errors
  browser.close()
 server.shutdown();print('PASS: drink presets and custom amounts, all automatic contributions, undo/recheck, deletion, goal persistence, streaks, charts and mobile fit')

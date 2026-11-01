@@ -91,3 +91,13 @@ test('habit delivery uses the owning account completion and suppresses only that
  const oldFetch=globalThis.fetch,sent=[];globalThis.fetch=async url=>{sent.push(url);return new Response(null,{status:201});};
  try{await scheduled(env,new Date('2026-11-01T12:00:00Z'));assert.deepEqual(sent,['https://web.push.apple.com/habit-bob']);await scheduled(env,new Date('2026-11-01T12:05:00Z'));assert.equal(sent.length,1);}finally{globalThis.fetch=oldFetch;}
 });
+
+test('Custom workout types and history persist across legacy account saves',async()=>{
+ const env=await setup(),token='a'.repeat(64),{emptySnapshot}=await import('../../account-data.js');
+ const snapshot=emptySnapshot();snapshot.state.customWorkoutTypes=['פילאטיס'];snapshot.state.workouts['2026-11-01']='פילאטיס';snapshot.state.days['2026-11-01']={'1-2':'done'};
+ assert.equal((await handle(request('/account/data','PUT',{revision:0,snapshot},token),env)).status,200);
+ const legacy=structuredClone(snapshot);delete legacy.state.customWorkoutTypes;legacy.state.workouts={};
+ assert.equal((await handle(request('/account/data','PUT',{revision:1,snapshot:legacy},token),env)).status,200);
+ const saved=await (await handle(request('/account/data','GET',undefined,token),env)).json();
+ assert.deepEqual(saved.snapshot.state.customWorkoutTypes,['פילאטיס']);assert.equal(saved.snapshot.state.workouts['2026-11-01'],'פילאטיס');
+});

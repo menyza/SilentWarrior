@@ -116,7 +116,8 @@ export async function accountRequest(request,env){
    if(data.snapshot?.state&&typeof data.snapshot.state==='object'&&!Array.isArray(data.snapshot.state)){
     const previous=await env.DB.prepare('SELECT data FROM account_documents WHERE user_id=?').bind(user.id).first();
     const previousState=previous?JSON.parse(previous.data)?.state:null;
-    for(const field of ['workouts','weeklyWorkoutGoal','water','waterGoal'])if(!Object.hasOwn(data.snapshot.state,field)&&previousState&&Object.hasOwn(previousState,field))data.snapshot.state[field]=previousState[field];
+    if(!Object.hasOwn(data.snapshot.state,'customWorkoutTypes')&&previousState?.workouts&&data.snapshot.state.workouts&&typeof data.snapshot.state.workouts==='object'&&!Array.isArray(data.snapshot.state.workouts))data.snapshot.state.workouts={...previousState.workouts,...data.snapshot.state.workouts};
+    for(const field of ['workouts','weeklyWorkoutGoal','water','waterGoal','customWorkoutTypes'])if(!Object.hasOwn(data.snapshot.state,field)&&previousState&&Object.hasOwn(previousState,field))data.snapshot.state[field]=previousState[field];
    }
    const snapshot=normalizeSnapshot(data.snapshot),now=Date.now();
    await env.DB.prepare('INSERT OR IGNORE INTO account_documents(user_id,revision,data,updated_at) VALUES (?,0,?,?)').bind(user.id,'null',now).run();

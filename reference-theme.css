@@ -178,3 +178,11 @@ header{height:68px;min-height:68px}
 #workout-options [data-workout-rest]{border-color:#6d9c83;background:#e7f3e8;color:#305e43}
 .workout-rest-note{grid-column:1/-1;margin:2px 0 0}
 [data-theme=dark] #drink-feedback:not([hidden]),[data-theme=dark] .drink-presets .drink-added,[data-theme=dark] #workout-options [data-workout-rest]{background:#264937;color:#d7f0df;border-color:#699c7c}
+
+#workout-picker{max-height:85dvh;overflow:auto}
+#add-workout-type{width:100%;min-height:44px;margin:12px 0 6px;border:1px dashed var(--green);border-radius:12px;background:var(--surface);color:var(--green);font:inherit}
+#custom-workout-form:not([hidden]){display:grid;gap:8px;padding:12px;border-radius:12px;background:var(--surface-soft)}
+#custom-workout-form input{font:inherit;font-size:16px;width:100%;min-height:44px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+#custom-workout-form button{min-height:44px;border:0;border-radius:8px;background:#276d59;color:#fff;font:inherit}
+#custom-workout-status{font-size:12px;line-height:1.5;margin:0}
+#workout-options button{min-width:0;overflow-wrap:anywhere}

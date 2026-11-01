@@ -1,6 +1,6 @@
 import {validWater} from './hydration.js';
 import {reminderSettings} from './reminder-settings.js';
-import {load,habits,workoutTypes} from './model.js';
+import {load,habits,workoutTypes,cleanCustomWorkoutTypes} from './model.js';
 import {validDate,validWeight} from './weight.js';
 import {cleanCustomHabits,cleanHabitOverrides} from './habit-catalog.js';
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -19,7 +19,8 @@ export function normalizeSnapshot(raw){
  for(const [date,marks] of Object.entries(input.days||{})){if(!validDate(date)||!object(marks))invalid();for(const [id,status] of Object.entries(marks)){if(!ids.has(id)||!['done','rest',null].includes(status))invalid();}}
  for(const [date,value] of Object.entries(input.weights||{}))if(!validDate(date)||!validWeight(value))invalid();
  for(const [date,value] of Object.entries(input.reflections||{}))if(!validDate(date)||!['easy','busy','tired','forgot','other'].includes(value))invalid();
- if(input.workouts!==undefined){if(!object(input.workouts))invalid();for(const [date,type] of Object.entries(input.workouts))if(!validDate(date)||(type!==null&&!workoutTypes.includes(type)))invalid();}
+ const customTypes=cleanCustomWorkoutTypes(input.customWorkoutTypes);if(input.customWorkoutTypes!==undefined&&(!Array.isArray(input.customWorkoutTypes)||customTypes.length!==input.customWorkoutTypes.length))invalid();
+ if(input.workouts!==undefined){if(!object(input.workouts))invalid();for(const [date,type] of Object.entries(input.workouts))if(!validDate(date)||(type!==null&&![...workoutTypes,...customTypes].includes(type)))invalid();}
  if(input.weeklyWorkoutGoal!==undefined&&(!Number.isInteger(input.weeklyWorkoutGoal)||input.weeklyWorkoutGoal<1||input.weeklyWorkoutGoal>7))invalid();
  if(!Number.isInteger(input.dailyGoal)||input.dailyGoal<10||input.dailyGoal>10000||input.dailyGoal%5)invalid();
  if(!Array.isArray(input.removedHabits||[])||(input.removedHabits||[]).some(id=>!ids.has(id)))invalid();
@@ -29,7 +30,7 @@ export function normalizeSnapshot(raw){
  return {schemaVersion:1,state,order:[...new Set(raw.order)],reminders};
 }
 export function emptySnapshot(){return {schemaVersion:1,state:load(null),order:[],reminders:null};}
-export function meaningful(snapshot){const s=snapshot.state;return Object.values(s.days).some(m=>Object.values(m).some(v=>v==='done'||v==='rest'))||Object.keys(s.weights).length>0||Object.keys(s.reflections).length>0||s.customHabits.length>0||!equal(s.removedHabits,['0-1'])||Object.values(s.water||{}).some(entries=>Object.values(entries).some(Boolean))||(s.waterGoal||2000)!==2000||s.dailyGoal!==200||(s.weeklyWorkoutGoal||3)!==3||Object.keys(s.habitOverrides||{}).length>0||snapshot.order.length>0||snapshot.reminders!==null;}
+export function meaningful(snapshot){const s=snapshot.state;return Object.values(s.days).some(m=>Object.values(m).some(v=>v==='done'||v==='rest'))||Object.keys(s.weights).length>0||Object.keys(s.reflections).length>0||s.customHabits.length>0||(s.customWorkoutTypes||[]).length>0||!equal(s.removedHabits,['0-1'])||Object.values(s.water||{}).some(entries=>Object.values(entries).some(Boolean))||(s.waterGoal||2000)!==2000||s.dailyGoal!==200||(s.weeklyWorkoutGoal||3)!==3||Object.keys(s.habitOverrides||{}).length>0||snapshot.order.length>0||snapshot.reminders!==null;}
 // Three-way merge. Independent edits merge; conflicting values require an explicit choice.
 export function mergeSnapshots(base,local,remote,prefer='remote'){
  const conflicts=[];
@@ -41,7 +42,7 @@ export function mergeSnapshots(base,local,remote,prefer='remote'){
    const map=arr=>Object.fromEntries((arr||[]).map(h=>[h.id,h]));
    return Object.values(merge(map(b),map(l),map(r),'customHabitsById'));
   }
-  if(['state.removedHabits','state.goalCelebratedDays'].includes(path)){
+  if(['state.removedHabits','state.goalCelebratedDays','state.customWorkoutTypes'].includes(path)){
    const ids=new Set([...(b||[]),...(l||[]),...(r||[])]);return [...ids].filter(id=>merge((b||[]).includes(id),(l||[]).includes(id),(r||[]).includes(id),path+'.'+id));
   }
   if(object(l)&&object(r)&&(b===undefined||object(b))){const out={};for(const key of new Set([...Object.keys(b||{}),...Object.keys(l),...Object.keys(r)])){if(['__proto__','constructor','prototype'].includes(key))continue;const value=merge(b?.[key],l[key],r[key],path?path+'.'+key:key);if(value!==undefined)out[key]=value;}return out;}
