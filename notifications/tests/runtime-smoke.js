@@ -26,6 +26,9 @@ try{
  assert.equal((await request('/account/data','PUT',{revision:0,snapshot},{Authorization:`Bearer ${session}`})).status,200);
  const restored=await (await request('/account/data','GET',null,{Authorization:`Bearer ${session}`})).json();
  assert.deepEqual(restored.snapshot,snapshot);
+ const legacy=structuredClone(snapshot);delete legacy.state.workouts;delete legacy.state.weeklyWorkoutGoal;
+ assert.equal((await request('/account/data','PUT',{revision:1,snapshot:legacy},{Authorization:`Bearer ${session}`})).status,200);
+ const afterLegacy=await (await request('/account/data','GET',null,{Authorization:`Bearer ${session}`})).json();assert.deepEqual(afterLegacy.snapshot,snapshot);
  const otherDocument=await (await request('/account/data','GET',null,{Authorization:`Bearer ${other}`})).json();assert.equal(otherDocument.snapshot,null);
  console.log('PASS: weekly workout target, workout type and personal weekday reminders persist in real D1 with owner isolation');
  const enrolled=await request('/push/subscription','POST',{subscription:{endpoint:'https://web.push.apple.com/account-runtime',keys:{p256dh:ec.getPublicKey().toString('base64url'),auth:randomBytes(16).toString('base64url')}},settings:{timeZone:'UTC',reminders:[{kind:'evening',time:'20:15'}]}},{Authorization:`Bearer ${session}`});

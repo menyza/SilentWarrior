@@ -101,6 +101,13 @@ export async function accountRequest(request,env){
   }
   if(path==='/account/data'&&request.method==='PUT'){
    const data=await json(request);if(!Number.isInteger(data.revision)||data.revision<0)return response({error:'invalid_revision'},400,origin);
+   // Older installed clients omit these fields entirely. Preserve the stored
+   // values on omission; modern clients can still explicitly clear or edit them.
+   if(data.snapshot?.state&&typeof data.snapshot.state==='object'&&!Array.isArray(data.snapshot.state)){
+    const previous=await env.DB.prepare('SELECT data FROM account_documents WHERE user_id=?').bind(user.id).first();
+    const previousState=previous?JSON.parse(previous.data)?.state:null;
+    for(const field of ['workouts','weeklyWorkoutGoal'])if(!Object.hasOwn(data.snapshot.state,field)&&previousState&&Object.hasOwn(previousState,field))data.snapshot.state[field]=previousState[field];
+   }
    const snapshot=normalizeSnapshot(data.snapshot),now=Date.now();
    await env.DB.prepare('INSERT OR IGNORE INTO account_documents(user_id,revision,data,updated_at) VALUES (?,0,?,?)').bind(user.id,'null',now).run();
    const updated=await env.DB.prepare('UPDATE account_documents SET revision=revision+1,data=?,updated_at=? WHERE user_id=? AND revision=? RETURNING revision').bind(JSON.stringify(snapshot),now,user.id,data.revision).first();

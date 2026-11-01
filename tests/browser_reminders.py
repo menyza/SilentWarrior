@@ -7,7 +7,8 @@ server=ThreadingHTTPServer(('127.0.0.1',0),partial(SimpleHTTPRequestHandler,dire
 with sync_playwright() as p:
  b=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
  page=b.new_page(viewport={'width':390,'height':664})
- page.on('pageerror',lambda error:print('PAGE ERROR:',error))
+ errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
+ page.add_init_script("Element.prototype.scrollIntoView=function(){throw new TypeError('Unsupported scroll options')};")
  page.add_init_script('''Object.defineProperty(window.Notification,'requestPermission',{value:async()=> 'granted'});window.__unsubscribed=false;const sub={toJSON:()=>({endpoint:'https://web.push.apple.com/test-ui',keys:{p256dh:'B'.repeat(87),auth:'A'.repeat(22)}}),unsubscribe:async()=>{window.__unsubscribed=true;return true}};const registration={pushManager:{getSubscription:async()=>sub,subscribe:async()=>sub}};Object.defineProperty(navigator,'serviceWorker',{value:{ready:Promise.resolve(registration),register:async()=>registration,getRegistration:async()=>registration}});''')
  calls=[]
  def route(r):
@@ -67,5 +68,6 @@ with sync_playwright() as p:
   assert kind in page.locator('[data-check="1-2"]').inner_text()
   page.locator('[data-check="1-2"]').click()
   assert page.locator('[data-check="1-2"]').get_attribute('aria-pressed')=='false'
+ assert not errors,errors
  b.close()
 server.shutdown();print('PASS: bare hostname submits, missing code has visible feedback, button recovers, enrollment, update, reload, test and disable remain functional')

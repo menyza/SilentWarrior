@@ -48,6 +48,10 @@ with sync_playwright() as p:
  pending[0].fulfill(status=200,content_type='application/json',headers={'Access-Control-Allow-Origin':'*'},body='{"status":"sent"}')
  page.wait_for_function("document.querySelector('#push-status').textContent.includes('קיבל את ההודעה')")
  page.unroute('**/push/subscription/device-a/test')
+ page.route('**/push/subscription/device-a/test',lambda r:r.fulfill(status=502,content_type='application/json',headers={'Access-Control-Allow-Origin':'*'},body='{"error":"push_provider_rejected"}'))
+ page.locator('#push-test').click();page.wait_for_function("document.querySelector('#push-status').textContent.includes('ספק ההתראות דחה')")
+ assert page.locator('#push-test').is_enabled()
+ page.unroute('**/push/subscription/device-a/test')
  # A different signed-in account cannot expose or operate the stored registration.
  page.add_init_script("localStorage.setItem('silent-warrior-account-v1',JSON.stringify({token:'b'.repeat(64),user:{id:'B',displayName:'Bob'}}))")
  page.reload();page.wait_for_function("document.querySelector('#cloud-indicator').textContent==='שמור בחשבון'");page.locator('[data-page="settings"]').click();page.locator('[data-page="notifications"]').click()
