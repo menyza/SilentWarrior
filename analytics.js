@@ -1,3 +1,4 @@
+import {hasReport} from './hydration.js';
 import {dayKey,habits,allHabits,dailyScore,earnedPoints} from './model.js';
 export function shiftDay(key,amount){const d=new Date(key+'T12:00:00');d.setDate(d.getDate()+amount);return dayKey(d);}
 export function periodDates(mode,anchor){const d=new Date(anchor+'T12:00:00');if(mode==='month')d.setDate(1);else d.setDate(d.getDate()-d.getDay());const start=dayKey(d),end=new Date(d);if(mode==='month')end.setMonth(end.getMonth()+1);else end.setDate(end.getDate()+7);const dates=[];for(let k=start;k<dayKey(end);k=shiftDay(k,1))dates.push(k);return dates;}
@@ -29,4 +30,10 @@ export function weeklyWorkoutProgress(state,today=dayKey()){
  const dates=periodDates('week',today),done=dates.filter(date=>date<=today&&state.days[date]?.['1-2']==='done').length;
  const total=state.weeklyWorkoutGoal||3;
  return {done,total,percent:Math.min(100,Math.round(done/total*100)),start:dates[0],end:dates[6]};
+}
+
+export function reportingStreak(state,today=dayKey()){
+ const dates=[...new Set([...Object.keys(state.days),...Object.keys(state.weights),...Object.keys(state.reflections),...Object.keys(state.water||{})])].filter(date=>date<=today&&hasReport(state,date)).sort();
+ let best=0,run=0,previous;for(const date of dates){run=previous&&shiftDay(previous,1)===date?run+1:1;best=Math.max(best,run);previous=date;}
+ const set=new Set(dates);let current=0,date=set.has(today)?today:shiftDay(today,-1);while(set.has(date)){current++;date=shiftDay(date,-1);}return {current,best};
 }

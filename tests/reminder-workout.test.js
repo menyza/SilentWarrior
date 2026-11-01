@@ -15,8 +15,8 @@ test('custom reminder schedules and workout selections survive account normaliza
  assert.throws(()=>reminderSettings({...remote.reminders,reminders:Array(21).fill(remote.reminders.reminders[0])}));
 });
 
-test('weekly repeat validation rejects empty, duplicate and out-of-range days',()=>{
+test('legacy weekday settings are validated and normalized into daily reminders',()=>{
  const r={id:'tennis',kind:'custom',topic:'טניס',time:'18:00'},prefs={timeZone:'Asia/Jerusalem',reminders:[r]};
  for(const days of [[],[1,1],[7],[-1],['1']])assert.throws(()=>reminderSettings({...prefs,reminders:[{...r,days}]}));
- assert.deepEqual(reminderSettings({...prefs,reminders:[{...r,days:[3,1]}]}).reminders[0].days,[1,3]);
+ assert.equal(reminderSettings({...prefs,reminders:[{...r,days:[3,1]}]}).reminders[0].days,undefined);
 });

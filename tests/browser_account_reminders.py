@@ -26,7 +26,6 @@ with sync_playwright() as p:
  assert page.locator('#push-zone').evaluate('(e)=>e.tagName')=='SELECT'
  page.locator('#push-zone').select_option('America/New_York')
  page.locator('[data-reminder] input[type=time]').first.fill('09:15')
- for day in [0,2,4,5,6]:page.locator('[data-reminder]').first.locator(f'[data-weekday][value="{day}"]').uncheck()
  page.locator('#push-form [type=submit]').click()
  page.wait_for_function("document.querySelector('#push-status').textContent.includes('ההרשמה נשמרה')")
  enrollment=next(c for c in calls if c[0]=='POST' and c[1].endswith('/push/subscription'))
@@ -34,7 +33,7 @@ with sync_playwright() as p:
  assert 'x-enrollment-key' not in enrollment[3]
  assert json.loads(enrollment[2])['settings']['timeZone']=='America/New_York'
  assert json.loads(enrollment[2])['settings']['reminders'][0]['time']=='09:15'
- assert json.loads(enrollment[2])['settings']['reminders'][0]['days']==[1,3]
+ assert json.loads(enrollment[2])['settings']['reminders'][0].get('days') is None
  saved=json.loads(page.evaluate('localStorage.getItem("silent-warrior-push-v1")'))
  assert saved['owner']=='A' and saved['id']=='device-a' and 'token' not in saved
  page.locator('[data-reminder] input[type=time]').first.fill('10:30');page.locator('#push-form [type=submit]').click()

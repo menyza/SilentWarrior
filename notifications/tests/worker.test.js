@@ -38,15 +38,15 @@ test('custom reminders preserve topics, send independently once per date, retry 
  }finally{globalThis.fetch=oldFetch;}
 });
 
-test('weekly reminders use the local weekday and retain late-night deliveries across midnight',()=>{
+test('reminders now repeat daily even with legacy weekday settings and retain midnight delivery',()=>{
  const reminders=[{id:'tennis',kind:'custom',topic:'טניס',time:'08:00',days:[1,3]}];
  const weekly={timeZone:'Asia/Jerusalem',reminders};
  assert.equal(dueReminders(weekly,new Date('2026-11-02T06:00:00Z')).length,1);
- assert.equal(dueReminders(weekly,new Date('2026-11-03T06:00:00Z')).length,0);
+ assert.equal(dueReminders(weekly,new Date('2026-11-03T06:00:00Z')).length,1);
  assert.equal(dueReminders(weekly,new Date('2026-11-04T06:05:00Z')).length,1);
  const night={timeZone:'Asia/Jerusalem',reminders:[{...reminders[0],time:'23:59'}]};
  const due=dueReminders(night,new Date('2026-11-02T22:00:00Z'));
  assert.equal(due.length,1);assert.equal(due[0].date,'2026-11-02');
- assert.equal(dueReminders(night,new Date('2026-11-03T22:00:00Z')).length,0);
+ assert.equal(dueReminders(night,new Date('2026-11-03T22:00:00Z')).length,1);
  assert.equal(dueReminders(night,new Date('2026-11-02T22:10:00Z')).length,0);
 });

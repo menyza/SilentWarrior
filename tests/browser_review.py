@@ -35,7 +35,7 @@ with sync_playwright() as p:
  download=event.value;assert download.suggested_filename=='silent-warrior-2026-11-04.xlsx'
  path=download.path();archive=zipfile.ZipFile(path);assert archive.testzip() is None
  with open(path,'rb') as stream:workbook=load_workbook(stream)
- assert workbook.sheetnames==['סיכום יומי','יומן הרגלים','הגדרות הרגלים','תזכורות','מידע']
+ assert workbook.sheetnames==['סיכום יומי','יומן הרגלים','הגדרות הרגלים','תזכורות','שתייה','מידע']
  summary=list(workbook['סיכום יומי'].values);daily=next(row for row in summary if row[0]=='2026-11-03')
  assert daily[5]==75.5 and daily[7]=='חדר כושר'
  assert next(row for row in summary if row[0]=='2026-11-01')[7]=='טניס'
@@ -43,7 +43,7 @@ with sync_playwright() as p:
  assert workbook['סיכום יומי'].sheet_view.rightToLeft and workbook['סיכום יומי'].freeze_panes=='A2'
  assert any(cell.value=='=SUM(1,2) & <בדיקה>' and cell.data_type=='s' for row in workbook['הגדרות הרגלים'] for cell in row)
  assert not any(cell.data_type=='f' for sheet in workbook for row in sheet for cell in row)
- assert list(workbook['תזכורות'].values)[1]==('קריאה','20:00','שני, רביעי','Asia/Jerusalem')
+ assert list(workbook['תזכורות'].values)[1]==('קריאה','20:00','Asia/Jerusalem')
  for mode in ['light','dark']:
   page.emulate_media(color_scheme=mode)
   for width in [320,390,430]:

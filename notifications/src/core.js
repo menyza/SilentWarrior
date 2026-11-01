@@ -9,15 +9,12 @@ export function subscription(value){
 export function dueReminders(value,now=new Date()){
  const s=settings(value),parts=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:s.timeZone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(now).map(p=>[p.type,p.value]));
  const minute=Number(parts.hour)*60+Number(parts.minute),date=`${parts.year}-${parts.month}-${parts.day}`;
- const weekday=new Date(date+'T12:00:00Z').getUTCDay();
  return s.reminders.flatMap(r=>{
   const [h,m]=r.time.split(':').map(Number),difference=minute-h*60-m;
   // Cron can first encounter a 23:59 reminder after midnight. Attribute it to
-  // the previous local calendar day, including its selected weekday.
+  // the previous local calendar day.
   const previous=difference<0,elapsed=previous?difference+1440:difference;
   if(elapsed>=10)return [];
-  const reminderDay=previous?(weekday+6)%7:weekday;
-  if(r.days&&!r.days.includes(reminderDay))return [];
   const reminderDate=previous?new Date(Date.parse(date+'T12:00:00Z')-86400000).toISOString().slice(0,10):date;
   return [{...r,date:reminderDate}];
  });

@@ -1,3 +1,4 @@
+import {validUsageSession} from './usage.js';
 import {socialConfig,socialAuthorization,socialIdentity,pkceHash} from './social-auth.js';
 import {generateRegistrationOptions,verifyRegistrationResponse,generateAuthenticationOptions,verifyAuthenticationResponse} from '@simplewebauthn/server';
 import {hash} from './core.js';
@@ -92,6 +93,15 @@ export async function accountRequest(request,env){
    return response(await startSession(cred.user_id,env),200,origin);
   }
   const user=await accountSession(request,env);if(!user)return response({error:'login_required'},401,origin);
+  if(path==='/account/usage'&&request.method==='POST'){
+   const data=await json(request),now=Date.now();
+   if(!data||!Array.isArray(data.sessions)||data.sessions.length<1||data.sessions.length>20||data.sessions.some(session=>!validUsageSession(session,now)))return response({error:'invalid_data'},400,origin);
+   await env.DB.batch(data.sessions.map(session=>env.DB.prepare('INSERT INTO usage_sessions(user_id,session_id,started_at,last_seen_at,active_ms,received_at) VALUES (?,?,?,?,?,?) ON CONFLICT(user_id,session_id) DO UPDATE SET last_seen_at=MAX(usage_sessions.last_seen_at,excluded.last_seen_at),active_ms=MAX(usage_sessions.active_ms,excluded.active_ms),received_at=excluded.received_at').bind(user.id,session.id,session.startedAt,session.lastSeenAt,session.activeMs,now)));
+   return response({saved:true},200,origin);
+  }
+  if(path==='/account/usage'&&request.method==='GET'){
+   const totals=await env.DB.prepare('SELECT COUNT(*) AS opens,COALESCE(SUM(active_ms),0) AS activeMs,MAX(last_seen_at) AS lastSeenAt FROM usage_sessions WHERE user_id=?').bind(user.id).first();return response(totals,200,origin);
+  }
   if(path==='/account/me'&&request.method==='GET')return response({user:userOut(user)},200,origin);
   if(path==='/account/logout'&&request.method==='POST'){await env.DB.prepare('DELETE FROM account_sessions WHERE token_hash=?').bind(user.token_hash).run();return response({loggedOut:true},200,origin);}
   if(path==='/account/history'&&request.method==='GET'){const {results}=await env.DB.prepare('SELECT revision,created_at FROM account_document_history WHERE user_id=? ORDER BY revision DESC LIMIT 10').bind(user.id).all();return response({versions:results},200,origin);}
@@ -106,7 +116,7 @@ export async function accountRequest(request,env){
    if(data.snapshot?.state&&typeof data.snapshot.state==='object'&&!Array.isArray(data.snapshot.state)){
     const previous=await env.DB.prepare('SELECT data FROM account_documents WHERE user_id=?').bind(user.id).first();
     const previousState=previous?JSON.parse(previous.data)?.state:null;
-    for(const field of ['workouts','weeklyWorkoutGoal'])if(!Object.hasOwn(data.snapshot.state,field)&&previousState&&Object.hasOwn(previousState,field))data.snapshot.state[field]=previousState[field];
+    for(const field of ['workouts','weeklyWorkoutGoal','water','waterGoal'])if(!Object.hasOwn(data.snapshot.state,field)&&previousState&&Object.hasOwn(previousState,field))data.snapshot.state[field]=previousState[field];
    }
    const snapshot=normalizeSnapshot(data.snapshot),now=Date.now();
    await env.DB.prepare('INSERT OR IGNORE INTO account_documents(user_id,revision,data,updated_at) VALUES (?,0,?,?)').bind(user.id,'null',now).run();

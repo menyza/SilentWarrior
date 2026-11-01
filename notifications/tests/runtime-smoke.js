@@ -22,14 +22,18 @@ try{
   await db.prepare('INSERT INTO accounts(id,display_name,created_at) VALUES (?,?,?)').bind(id,id,Date.now()).run();
   await db.prepare('INSERT INTO account_sessions(token_hash,user_id,expires_at) VALUES (?,?,?)').bind(await hash(value),id,Date.now()+60000).run();
  }
- const snapshot=emptySnapshot();snapshot.state.weeklyWorkoutGoal=4;snapshot.state.days['2026-11-01']={'1-2':'done'};snapshot.state.workouts['2026-11-01']='טניס';snapshot.reminders={timeZone:'Asia/Jerusalem',reminders:[{id:'tennis',kind:'custom',topic:'טניס',time:'18:00',days:[1,3]}]};
+ const snapshot=emptySnapshot();snapshot.state.weeklyWorkoutGoal=4;snapshot.state.waterGoal=3000;snapshot.state.water={'2026-11-01':{'11111111-1111-4111-8111-111111111111':{kind:'coffee',ml:200,at:100}}};snapshot.state.days['2026-11-01']={'1-2':'done'};snapshot.state.workouts['2026-11-01']='טניס';snapshot.reminders={timeZone:'Asia/Jerusalem',reminders:[{id:'tennis',kind:'custom',topic:'טניס',time:'18:00'}]};
  assert.equal((await request('/account/data','PUT',{revision:0,snapshot},{Authorization:`Bearer ${session}`})).status,200);
  const restored=await (await request('/account/data','GET',null,{Authorization:`Bearer ${session}`})).json();
  assert.deepEqual(restored.snapshot,snapshot);
- const legacy=structuredClone(snapshot);delete legacy.state.workouts;delete legacy.state.weeklyWorkoutGoal;
+ const legacy=structuredClone(snapshot);delete legacy.state.workouts;delete legacy.state.weeklyWorkoutGoal;delete legacy.state.water;delete legacy.state.waterGoal;
  assert.equal((await request('/account/data','PUT',{revision:1,snapshot:legacy},{Authorization:`Bearer ${session}`})).status,200);
  const afterLegacy=await (await request('/account/data','GET',null,{Authorization:`Bearer ${session}`})).json();assert.deepEqual(afterLegacy.snapshot,snapshot);
  const otherDocument=await (await request('/account/data','GET',null,{Authorization:`Bearer ${other}`})).json();assert.equal(otherDocument.snapshot,null);
+ const usage={id:'33333333-3333-4333-8333-333333333333',startedAt:Date.now()-15000,lastSeenAt:Date.now(),activeMs:12000};
+ for(let n=0;n<2;n++)assert.equal((await request('/account/usage','POST',{sessions:[usage]},{Authorization:`Bearer ${session}`})).status,200);
+ const usageTotals=await (await request('/account/usage','GET',null,{Authorization:`Bearer ${session}`})).json();assert.equal(usageTotals.opens,1);assert.equal(usageTotals.activeMs,12000);
+ console.log('PASS: real D1 stores water entries and goal, preserves them across legacy writes and counts usage idempotently');
  console.log('PASS: weekly workout target, workout type and personal weekday reminders persist in real D1 with owner isolation');
  const enrolled=await request('/push/subscription','POST',{subscription:{endpoint:'https://web.push.apple.com/account-runtime',keys:{p256dh:ec.getPublicKey().toString('base64url'),auth:randomBytes(16).toString('base64url')}},settings:{timeZone:'UTC',reminders:[{kind:'evening',time:'20:15'}]}},{Authorization:`Bearer ${session}`});
  assert.equal(enrolled.status,201);const {id}=await enrolled.json(),device='/push/subscription/'+id;

@@ -9,14 +9,12 @@ export function reminderSettings(value){
   const id=legacy?r.kind:r.id;
   if(typeof id!=='string'||!/^[a-zA-Z0-9_-]{1,64}$/.test(id)||seen.has(id))throw new Error('invalid_reminder');
   seen.add(id);
-  let repeat={};
   if(r.days!==undefined){
    if(!Array.isArray(r.days)||r.days.length===0||r.days.length>7||r.days.some(d=>!Number.isInteger(d)||d<0||d>6)||new Set(r.days).size!==r.days.length)throw new Error('invalid_reminder');
-   repeat={days:[...r.days].sort((a,b)=>a-b)};
   }
-  if(legacy)return {kind:r.kind,time:r.time,...repeat};
+  if(legacy)return {kind:r.kind,time:r.time};
   if(typeof r.topic!=='string'||!r.topic.trim()||r.topic.trim().length>100)throw new Error('invalid_reminder');
-  return {id,kind:'custom',time:r.time,topic:r.topic.trim(),...repeat};
+  return {id,kind:'custom',time:r.time,topic:r.topic.trim()};
  });
  return {timeZone:value.timeZone,reminders};
 }

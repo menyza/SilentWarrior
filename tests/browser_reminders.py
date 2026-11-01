@@ -24,12 +24,11 @@ with sync_playwright() as p:
   page.locator('#add-reminder').click();row=page.locator('[data-reminder]').last
   row.locator('[data-topic]').fill(topic);row.locator('[type=time]').fill('14:30')
  page.locator('[data-reminder]').last.locator('[data-remove-reminder]').click();assert page.locator('[data-reminder]').count()==4
- for day in [0,2,4,5,6]:page.locator('[data-reminder]').nth(2).locator(f'[data-weekday][value="{day}"]').uncheck()
  page.locator('#push-zone').select_option('America/New_York')
  page.locator('#push-form [type=submit]').click();page.wait_for_function("document.querySelector('#push-status').textContent.includes('נשמרו בשירות')")
  update=next(call for call in calls if call[0]=='PUT');settings=json.loads(update[2])
  assert settings['timeZone']=='America/New_York' and len(settings['reminders'])==4
- assert settings['reminders'][2]['topic']=='טניס' and settings['reminders'][2]['days']==[1,3]
+ assert settings['reminders'][2]['topic']=='טניס' and settings['reminders'][2].get('days') is None
  assert update[3]['authorization']=='Bearer '+'a'*64
  assert not any(call[0]=='POST' and call[1].endswith('/subscription') for call in calls)
  page.reload();page.locator('[data-page="settings"]').click();page.locator('[data-page="notifications"]').click()

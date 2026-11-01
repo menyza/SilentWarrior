@@ -16,13 +16,24 @@ test('registration requires invitation and replayed/forged WebAuthn responses ca
 
 test('legacy clients cannot erase workout types or weekly targets; explicit new-client edits still apply',async()=>{
  const env=await setup(),token='a'.repeat(64),snapshot=emptySnapshot();
- snapshot.state.weeklyWorkoutGoal=4;snapshot.state.days['2026-11-01']={'1-2':'done'};snapshot.state.workouts['2026-11-01']='טניס';
+ snapshot.state.weeklyWorkoutGoal=4;snapshot.state.days['2026-11-01']={'1-2':'done'};snapshot.state.workouts['2026-11-01']='טניס';snapshot.state.waterGoal=3000;snapshot.state.water={'2026-11-01':{'11111111-1111-4111-8111-111111111111':{kind:'coffee',ml:200,at:100}}};
  assert.equal((await handle(request('/account/data','PUT',{revision:0,snapshot},token),env)).status,200);
- const legacy=structuredClone(snapshot);delete legacy.state.workouts;delete legacy.state.weeklyWorkoutGoal;legacy.state.weights['2026-11-01']=75.5;
+ const legacy=structuredClone(snapshot);delete legacy.state.workouts;delete legacy.state.weeklyWorkoutGoal;delete legacy.state.water;delete legacy.state.waterGoal;legacy.state.weights['2026-11-01']=75.5;
  assert.equal((await handle(request('/account/data','PUT',{revision:1,snapshot:legacy},token),env)).status,200);
  const saved=await (await handle(request('/account/data','GET',undefined,token),env)).json();
- assert.equal(saved.snapshot.state.weeklyWorkoutGoal,4);assert.equal(saved.snapshot.state.workouts['2026-11-01'],'טניס');assert.equal(saved.snapshot.state.weights['2026-11-01'],75.5);
+ assert.equal(saved.snapshot.state.weeklyWorkoutGoal,4);assert.equal(saved.snapshot.state.workouts['2026-11-01'],'טניס');assert.equal(saved.snapshot.state.weights['2026-11-01'],75.5);assert.equal(saved.snapshot.state.waterGoal,3000);assert.equal(saved.snapshot.state.water['2026-11-01']['11111111-1111-4111-8111-111111111111'].ml,200);
  saved.snapshot.state.workouts['2026-11-01']=null;saved.snapshot.state.weeklyWorkoutGoal=2;
  assert.equal((await handle(request('/account/data','PUT',{revision:2,snapshot:saved.snapshot},token),env)).status,200);
  const edited=await (await handle(request('/account/data','GET',undefined,token),env)).json();assert.equal(edited.snapshot.state.workouts['2026-11-01'],null);assert.equal(edited.snapshot.state.weeklyWorkoutGoal,2);
+});
+
+test('usage sessions are idempotent, monotonic and scoped to the authenticated user',async()=>{
+ const env=await setup(),a='a'.repeat(64),b='b'.repeat(64),now=Date.now(),session={id:'11111111-1111-4111-8111-111111111111',startedAt:now-20000,lastSeenAt:now,activeMs:10000};
+ assert.equal((await handle(request('/account/usage','POST',{sessions:[session]}),env)).status,401);
+ for(let i=0;i<2;i++)assert.equal((await handle(request('/account/usage','POST',{userId:'B',sessions:[session]},a),env)).status,200);
+ let totals=await (await handle(request('/account/usage','GET',undefined,a),env)).json();assert.equal(totals.opens,1);assert.equal(totals.activeMs,10000);
+ await handle(request('/account/usage','POST',{sessions:[{...session,activeMs:5000}]},a),env);
+ totals=await (await handle(request('/account/usage','GET',undefined,a),env)).json();assert.equal(totals.activeMs,10000);
+ assert.equal((await (await handle(request('/account/usage','GET',undefined,b),env)).json()).opens,0);
+ assert.equal((await handle(request('/account/usage','POST',{sessions:[{...session,activeMs:99999999}]},a),env)).status,400);
 });

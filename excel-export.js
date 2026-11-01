@@ -1,3 +1,4 @@
+import {waterDay,drinkTypes} from './hydration.js';
 import {allHabits,activeHabits,dayKey,dailyScore,earnedPoints} from './model.js';
 import {validDate} from './weight.js';
 import {reminderTopic} from './reminder-settings.js';
@@ -8,18 +9,18 @@ const statusLabel=status=>status==='done'?'בוצע':status==='rest'?'מנוחה
 const reflectionLabels={easy:'היה קל למצוא מקום להרגלים',busy:'יום עמוס',tired:'הייתי עייף',forgot:'שכחתי לסמן או לבצע',other:'משהו אחר'};
 export function exportSheets(state,reminders=null,today=dayKey()){
  const catalog=allHabits(state),active=activeHabits(state);
- const dates=[...new Set([Object.keys(state.days),Object.keys(state.weights),Object.keys(state.reflections),Object.keys(state.workouts||{})].flat())].filter(date=>validDate(date)&&date<=today).sort();
- const daily=[['תאריך','הרגלים פעילים שסומנו','מספר הרגלים פעילים','אחוז השלמה','נקודות','משקל בק״ג','מצב אימון','סוג אימון','סיכום היום']];
+ const dates=[...new Set([Object.keys(state.days),Object.keys(state.weights),Object.keys(state.reflections),Object.keys(state.workouts||{}),Object.keys(state.water||{})].flat())].filter(date=>validDate(date)&&date<=today).sort();
+ const daily=[['תאריך','הרגלים פעילים שסומנו','מספר הרגלים פעילים','אחוז השלמה','נקודות','משקל בק״ג','מצב אימון','סוג אימון','סיכום היום','שתייה במ״ל','יעד שתייה במ״ל']];
  const journal=[['תאריך','מזהה הרגל','הרגל','חלק ביום','מצב','נקודות','סוג אימון','בארכיון כעת']];
  for(const date of dates){
   const marks=state.days[date]||{},completed=active.filter(h=>['done','rest'].includes(marks[h.id])).length;
-  daily.push([date,completed,active.length,active.length?Math.round(completed/active.length*100):0,dailyScore(state,date),state.weights[date]??'',statusLabel(marks['1-2']),marks['1-2']==='done'?state.workouts?.[date]||'לא תועד':'',reflectionLabels[state.reflections[date]]||'']);
+  daily.push([date,completed,active.length,active.length?Math.round(completed/active.length*100):0,dailyScore(state,date),state.weights[date]??'',statusLabel(marks['1-2']),marks['1-2']==='done'?state.workouts?.[date]||'לא תועד':'',reflectionLabels[state.reflections[date]]||'',waterDay(state,date).total,state.waterGoal||2000]);
   for(const habit of catalog){if(habit.archived&&!Object.hasOwn(marks,habit.id))continue;const status=marks[habit.id];journal.push([date,habit.id,habit.name,habit.group,statusLabel(status),earnedPoints(habit,status),habit.exercise&&status==='done'?state.workouts?.[date]||'לא תועד':'',habit.archived?'כן':'לא']);}
  }
  const habits=[['מזהה','שם הרגל','חלק ביום','חשיבות','מאמץ','נקודות להשלמה','בארכיון','יעד שבועי'],...catalog.map(h=>[h.id,h.name,h.group,h.importance,h.effort,h.points,h.archived?'כן':'לא',h.exercise?state.weeklyWorkoutGoal||3:7])];
- const days=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
- const schedule=[['נושא','שעה','ימים בשבוע','אזור זמן'],...(reminders?.reminders||[]).map(r=>[reminderTopic(r),r.time,(r.days||[0,1,2,3,4,5,6]).map(day=>days[day]).join(', '),reminders.timeZone])];
- return [{name:'סיכום יומי',rows:daily},{name:'יומן הרגלים',rows:journal},{name:'הגדרות הרגלים',rows:habits},{name:'תזכורות',rows:schedule},{name:'מידע',rows:[['פרט','ערך'],['עד לתאריך',today],['יעד נקודות יומי',state.dailyGoal],['יעד אימונים שבועי',state.weeklyWorkoutGoal||3],['אופן חישוב','הנקודות מחושבות לפי הדירוגים הנוכחיים; הרגלי עבר מחושבים לפי הגדרות ההרגלים כיום.'],['פירוש נתונים חסרים','לא סומן אינו מעיד שההרגל לא בוצע.'],['מקור הנתונים','הנתונים הזמינים במכשיר בזמן הייצוא. בחשבון מחובר מומלץ לוודא שמופיע שמור בחשבון.']]}];
+ const schedule=[['נושא','שעה','אזור זמן'],...(reminders?.reminders||[]).map(r=>[reminderTopic(r),r.time,reminders.timeZone])];
+ const drinks=[['תאריך','סוג','כמות במ״ל','מקור']];for(const date of dates){const day=waterDay(state,date);for(const [,entry] of day.manual)drinks.push([date,drinkTypes[entry.kind],entry.ml,'הוספה ידנית']);for(const entry of day.automatic)drinks.push([date,entry.label,entry.ml,'מהרגל שסומן']);}
+ return [{name:'סיכום יומי',rows:daily},{name:'יומן הרגלים',rows:journal},{name:'הגדרות הרגלים',rows:habits},{name:'תזכורות',rows:schedule},{name:'שתייה',rows:drinks},{name:'מידע',rows:[['פרט','ערך'],['עד לתאריך',today],['יעד נקודות יומי',state.dailyGoal],['יעד אימונים שבועי',state.weeklyWorkoutGoal||3],['יעד שתייה במ״ל',state.waterGoal||2000],['אופן חישוב','הנקודות מחושבות לפי הדירוגים הנוכחיים; הרגלי עבר מחושבים לפי הגדרות ההרגלים כיום.'],['פירוש נתונים חסרים','לא סומן אינו מעיד שההרגל לא בוצע.'],['מקור הנתונים','הנתונים הזמינים במכשיר בזמן הייצוא. בחשבון מחובר מומלץ לוודא שמופיע שמור בחשבון.']]}];
 }
 function column(index){let name='';for(let n=index+1;n;n=Math.floor((n-1)/26))name=String.fromCharCode(65+(n-1)%26)+name;return name;}
 function worksheet(rows){
