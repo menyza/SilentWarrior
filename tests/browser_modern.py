@@ -7,17 +7,18 @@ server=ThreadingHTTPServer(('127.0.0.1',0),partial(SimpleHTTPRequestHandler,dire
 with sync_playwright() as p:
  b=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
  page=b.new_page(viewport={'width':390,'height':664},is_mobile=True,has_touch=True)
+ page.add_init_script("window.open=()=>null")
  errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.goto(f'http://127.0.0.1:{server.server_port}');page.locator('[data-group="בוקר"]').click()
  assert page.locator('[data-check]').count()==12
  page.locator('[data-check="0-12"]').click();assert page.locator('#weigh-in').is_visible()
  page.locator('#quick-weight').fill('75.5');page.locator('#weigh-in-form [type=submit]').click()
  assert page.locator('[data-check="0-12"]').get_attribute('aria-pressed')=='true'
- assert page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuenow')=='1'
+ assert ', 1 מתוך' in page.locator('[data-group="בוקר"]').get_attribute('aria-label')
  assert page.locator('.celebration i').count()==14
  page.locator('[data-page="weight"]').click();assert page.locator('.weight-summary b').first.inner_text().startswith('75.5')
  page.locator('[data-page="today"]').click();page.locator('[data-group="בוקר"]').click()
- page.locator('[data-check="0-12"]').click();assert page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuenow')=='0'
+ page.locator('[data-check="0-12"]').click();assert ', 0 מתוך' in page.locator('[data-group="בוקר"]').get_attribute('aria-label')
  page.locator('[data-check="0-12"]').click();assert page.locator('#quick-weight').input_value()=='75.5'
  page.locator('#weigh-in-form [type=submit]').click()
  first=page.locator('[data-check="0-0"]').bounding_box();target=page.locator('[data-check="0-3"]').bounding_box()

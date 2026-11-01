@@ -9,14 +9,20 @@ with sync_playwright() as p:
  b=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
  page=b.new_page(viewport={'width':390,'height':664},is_mobile=True,has_touch=True)
  page.set_viewport_size({'width':390,'height':664});errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+ page.add_init_script("window.__spotifyOpens=[];window.open=url=>{window.__spotifyOpens.push(url);return null}")
  page.goto(url);page.locator('[data-group="בוקר"]').click()
  assert page.get_by_role('progressbar').count()==3
- assert page.locator('[data-gauge=group] .score-ring').bounding_box()['height']<=48
+ assert page.locator('[data-group="בוקר"] .daypart-ring').bounding_box()['height']<=48
  assert page.locator('.today-title').bounding_box()['height']<65
  for id,points in [('0-2',5),('0-0',10),('0-6',15),('0-10',20)]:
   assert f'points-{points}' in page.locator(f'[data-habit-id="{id}"]').get_attribute('class')
  pending_colors=page.locator('.habit-tile').evaluate_all('(tiles)=>tiles.map(e=>getComputedStyle(e).backgroundColor)')
- assert len(set(pending_colors))>1
+ assert len(set(pending_colors))==1
+ assert page.locator('.tile-status,.priority-pip').count()==0
+ assert page.locator('[data-group] .daypart-ring').count()==3
+ assert '/' not in page.locator('[data-group="בוקר"]').inner_text()
+ assert page.locator('[data-gauge=water]').count()==1
+ assert page.locator('[data-gauge=group]').count()==0
  count=page.locator('[data-check]').count()
  for i in range(count):
   button=page.locator('[data-check]').nth(i)
@@ -24,7 +30,7 @@ with sync_playwright() as p:
    button.click();page.locator('#quick-weight').fill('75.5');page.locator('#weigh-in-form [type=submit]').click()
   else:button.click()
  colors=page.locator('.habit-tile.done').evaluate_all('(tiles)=>tiles.map(e=>getComputedStyle(e).backgroundColor)')
- assert len(colors)==count and len(set(colors))==1
+ assert len(colors)==count and len(set(colors))==1 and colors[0]!=pending_colors[0]
  rgb=[int(x) for x in colors[0].removeprefix('rgb(').removesuffix(')').split(',')]
  assert rgb[1]>rgb[0] and rgb[1]>rgb[2]
  page.emulate_media(color_scheme='dark');page.wait_for_function("document.documentElement.dataset.theme==='dark'")
@@ -33,16 +39,19 @@ with sync_playwright() as p:
  assert len(set(dark_colors))==1 and dark_colors[0]!=colors[0]
  dark_rgb=[int(x) for x in dark_colors[0].removeprefix('rgb(').removesuffix(')').split(',')];assert dark_rgb[1]>dark_rgb[0] and dark_rgb[1]>dark_rgb[2]
  page.emulate_media(color_scheme='light');page.wait_for_function("document.documentElement.dataset.theme==='light'")
- assert page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuenow')==str(count)
- assert '100 אחוזים' in page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuetext')
+ assert f', {count} מתוך' in page.locator('[data-group="בוקר"]').get_attribute('aria-label')
+ assert page.evaluate('window.__spotifyOpens')==['https://open.spotify.com/']
+ page.locator('[data-check="0-2"]').click();assert len(page.evaluate('window.__spotifyOpens'))==1
+ page.locator('[data-check="0-2"]').click();assert len(page.evaluate('window.__spotifyOpens'))==2
+ assert '100 אחוזים' in page.locator('[data-group="בוקר"]').get_attribute('aria-label')
  assert page.locator('[data-gauge=daily] [role=progressbar]').get_attribute('aria-valuenow')==str(count)
  assert int(page.locator('[data-gauge=daily] .score-ring>span').text_content().strip('%'))<100
- assert page.locator('[data-gauge=group] .score-ring>span').text_content()=='100%'
- page.locator('[data-group="ערב"]').click();assert page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuenow')=='0'
+ assert page.locator('[data-group="בוקר"] .daypart-ring>span').text_content()=='100%'
+ page.locator('[data-group="ערב"]').click();assert 'ערב: 0 אחוזים' in page.locator('[data-group="ערב"]').get_attribute('aria-label')
  page.locator('[data-page="history"]').click();assert int(page.locator('.total-points').inner_text())>0
  page.locator('[data-page="today"]').click();page.locator('[data-group="בוקר"]').click()
- assert '100 אחוזים' in page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuetext')
- page.reload();page.locator('[data-group="בוקר"]').click();assert page.locator('[data-gauge=group] .score-ring>span').text_content()=='100%'
+ assert '100 אחוזים' in page.locator('[data-group="בוקר"]').get_attribute('aria-label')
+ page.reload();page.locator('[data-group="בוקר"]').click();assert page.locator('[data-group="בוקר"] .daypart-ring>span').text_content()=='100%'
  assert page.locator('.brand-icon').evaluate('(e)=>e.complete&&e.naturalWidth>0')
  manifest=page.request.get(url+'manifest.webmanifest').json()
  for icon in manifest['icons']:assert page.request.get(url+icon['src']).status==200
@@ -57,10 +66,10 @@ with sync_playwright() as p:
 
  for w,h in [(320,568),(390,664),(430,740)]:
   page.set_viewport_size({'width':w,'height':h})
-  assert page.locator('[data-gauge=group] .score-ring').bounding_box()['height']<=48
+  assert page.locator('[data-group="בוקר"] .daypart-ring').bounding_box()['height']<=48
   assert page.locator('.habit-panel').evaluate('(e)=>e.scrollHeight<=e.clientHeight+1')
   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
  page.set_viewport_size({'width':390,'height':664});page.screenshot(path='/tmp/warrior-group-gauge.png')
  assert not errors,errors
  b.close()
-server.shutdown();print('PASS: app icon assets, compact title-row gauge, morning reaches 100% independently, evening starts at zero, daily score preserved, point-based colors, reload and mobile layouts')
+server.shutdown();print('PASS: neutral cards, green completion, Spotify launch intent, day-tab progress, hydration ring, icons, reload and compact mobile layouts')

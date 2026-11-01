@@ -12,6 +12,7 @@ with sync_playwright() as p:
  errors=[]
  def device(credential=None):
   context=browser.new_context(viewport={'width':390,'height':744},accept_downloads=True)
+  context.add_init_script("window.open=()=>null")
   page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
   cdp=context.new_cdp_session(page);cdp.send('WebAuthn.enable',{'enableUI':False})
   aid=cdp.send('WebAuthn.addVirtualAuthenticator',{'options':{'protocol':'ctap2','transport':'internal','hasResidentKey':True,'hasUserVerification':True,'isUserVerified':True,'automaticPresenceSimulation':True}})['authenticatorId']

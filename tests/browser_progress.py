@@ -17,7 +17,7 @@ with sync_playwright() as p:
  page.goto(f'http://127.0.0.1:{server.server_port}')
  def percent(kind):return page.locator(f'[data-gauge={kind}] .score-ring>span').text_content()
  assert page.get_by_role('progressbar').count()==3
- assert percent('weekly')=='67%';assert percent('daily')=='3%'
+ assert percent('weekly')=='67%';assert percent('daily')=='3%';assert percent('water')=='13%'
  for group in ['בוקר','במהלך היום','ערב']:
   page.locator(f'[data-group="{group}"]').click();assert percent('daily')=='3%';assert percent('weekly')=='67%'
  page.locator('[data-group="במהלך היום"]').click();page.locator('[data-check="1-2"]').click()

@@ -13,7 +13,7 @@ with sync_playwright() as p:
  assert page.locator('[data-check]').count()==12
  assert page.locator('.daily-meter .track').count()==0
  assert page.locator('.daily-meter h2').count()==0
- page.locator('[data-check="0-0"]').click();assert page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuenow')=='1'
+ page.locator('[data-check="0-0"]').click();assert ', 1 מתוך' in page.locator('[data-group="בוקר"]').get_attribute('aria-label')
  page.locator('[data-page="settings"]').click();page.locator('[data-page="habits"]').click()
  page.locator('.add-habit summary').click()
  page.locator('#habit-name').fill('ללמוד 10 דקות');page.locator('#habit-importance').select_option('3');page.locator('#habit-effort').select_option('2')
@@ -23,13 +23,13 @@ with sync_playwright() as p:
  page.locator('[data-page="today"]').click();page.locator('[data-group="בוקר"]').click()
  assert page.locator('.habit-pager').count()==1
  page.locator('[data-habit-page="1"]').click();assert page.locator(f'[data-check="{custom}"]').count()==1
- page.locator(f'[data-check="{custom}"]').click();assert page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuenow')=='2'
+ page.locator(f'[data-check="{custom}"]').click();assert ', 2 מתוך' in page.locator('[data-group="בוקר"]').get_attribute('aria-label')
  page.reload();page.locator('[data-group="בוקר"]').click();page.locator('[data-habit-page="1"]').click()
  assert page.locator(f'[data-check="{custom}"]').get_attribute('aria-pressed')=='true'
  page.locator('[data-page="settings"]').click();page.locator('[data-page="habits"]').click();page.locator('.manage-group summary').first.click();page.locator(f'[data-remove-habit="{custom}"]').click()
  page.locator('[data-page="today"]').click();page.locator('[data-group="בוקר"]').click()
  assert page.locator(f'[data-check="{custom}"]').count()==0
- assert page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuenow')=='1'
+ assert ', 1 מתוך' in page.locator('[data-group="בוקר"]').get_attribute('aria-label')
  page.locator('[data-page="history"]').click()
  assert page.locator('.period-points').inner_text()=='30'
  page.locator('.review-table summary').click()
