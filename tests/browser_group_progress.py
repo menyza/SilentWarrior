@@ -15,12 +15,24 @@ with sync_playwright() as p:
  assert page.locator('.today-title').bounding_box()['height']<65
  for id,points in [('0-2',5),('0-0',10),('0-6',15),('0-10',20)]:
   assert f'points-{points}' in page.locator(f'[data-habit-id="{id}"]').get_attribute('class')
+ pending_colors=page.locator('.habit-tile').evaluate_all('(tiles)=>tiles.map(e=>getComputedStyle(e).backgroundColor)')
+ assert len(set(pending_colors))>1
  count=page.locator('[data-check]').count()
  for i in range(count):
   button=page.locator('[data-check]').nth(i)
   if button.get_attribute('data-check')=='0-12':
    button.click();page.locator('#quick-weight').fill('75.5');page.locator('#weigh-in-form [type=submit]').click()
   else:button.click()
+ colors=page.locator('.habit-tile.done').evaluate_all('(tiles)=>tiles.map(e=>getComputedStyle(e).backgroundColor)')
+ assert len(colors)==count and len(set(colors))==1
+ rgb=[int(x) for x in colors[0].removeprefix('rgb(').removesuffix(')').split(',')]
+ assert rgb[1]>rgb[0] and rgb[1]>rgb[2]
+ page.emulate_media(color_scheme='dark');page.wait_for_function("document.documentElement.dataset.theme==='dark'")
+ page.wait_for_function("previous=>{const colors=[...document.querySelectorAll('.habit-tile.done')].map(e=>getComputedStyle(e).backgroundColor);return colors.length>0&&new Set(colors).size===1&&colors[0]!==previous}",arg=colors[0])
+ dark_colors=page.locator('.habit-tile.done').evaluate_all('(tiles)=>tiles.map(e=>getComputedStyle(e).backgroundColor)')
+ assert len(set(dark_colors))==1 and dark_colors[0]!=colors[0]
+ dark_rgb=[int(x) for x in dark_colors[0].removeprefix('rgb(').removesuffix(')').split(',')];assert dark_rgb[1]>dark_rgb[0] and dark_rgb[1]>dark_rgb[2]
+ page.emulate_media(color_scheme='light');page.wait_for_function("document.documentElement.dataset.theme==='light'")
  assert page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuenow')==str(count)
  assert '100 אחוזים' in page.locator('[data-gauge=group] [role=progressbar]').get_attribute('aria-valuetext')
  assert page.locator('[data-gauge=daily] [role=progressbar]').get_attribute('aria-valuenow')==str(count)

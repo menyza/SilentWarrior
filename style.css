@@ -58,3 +58,14 @@ html[data-theme=dark]{--surface:#202c42;--surface-soft:#293954;--ink:#e3eafb;--s
 .progress-gauge[data-gauge=weekly] .score-ring{background:conic-gradient(#d6a039 var(--fill),var(--surface-soft,#e0e7f5) 0)}
 .today-title{margin-bottom:5px}.today-title h1{font-size:23px}.day-tabs{margin-top:7px}
 @media(max-height:700px){.progress-overview .score-ring{width:40px;height:40px}.progress-overview .score-ring>span{width:32px;height:32px;font-size:14px}.daily-meter.progress-overview{padding:1px 0 2px}.progress-gauge{gap:2px}.habit-panel .compact-grid{grid-template-rows:repeat(var(--rows),minmax(50px,1fr));gap:5px}.compact-grid .habit-tile,.compact-grid .tile-action{min-height:50px}.compact-grid .tile-action{padding:5px 3px 3px}.compact-grid .tile-icon{font-size:21px}.compact-grid .tile-action strong{font-size:10px}}
+
+.push-panel #push-zone{display:block;width:100%;min-width:0;min-height:48px;padding:10px 12px;border:1px solid var(--line,#c8d2e5);border-radius:12px;background:var(--surface,#fff);color:var(--ink);font:inherit;font-size:16px;margin:6px 0}
+.push-panel .push-sign-in{padding:12px;border-radius:12px;background:var(--surface-soft,#edf2fb)}
+/* Completion uses one quiet green treatment; pending cards retain their point colors. */
+.compact-grid .habit-tile.done:is(.points-5,.points-10,.points-15,.points-20,.points-25){--priority:#398258;background:#def1e3;border-color:#94c5a3;box-shadow:none}
+.compact-grid .habit-tile.done .tile-action strong{color:#356346}
+.compact-grid .habit-tile.done .tile-action .habit-points{background:#cce7d3;color:#376147}
+.compact-grid .habit-tile.done .tile-status{background:#398258;border-color:#398258;color:#fff}
+[data-theme=dark] .compact-grid .habit-tile.done:is(.points-5,.points-10,.points-15,.points-20,.points-25){--priority:#7fb697;background:#203f30;border-color:#45775a;box-shadow:none}
+[data-theme=dark] .compact-grid .habit-tile.done .tile-action strong{color:#bcdcc6}
+[data-theme=dark] .compact-grid .habit-tile.done .tile-action .habit-points{background:#2d4f3c;color:#bcdcc6}

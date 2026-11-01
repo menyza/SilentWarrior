@@ -22,7 +22,9 @@ with sync_playwright() as p:
  page.goto(f'http://127.0.0.1:{server.server_port}')
  page.wait_for_function("document.querySelector('#cloud-indicator').textContent==='שמור בחשבון'")
  page.locator('[data-page="settings"]').click();page.locator('[data-page="notifications"]').click()
- assert page.locator('#push-code').count()==0
+ assert page.locator('#push-code,#push-url').count()==0
+ assert page.locator('#push-zone').evaluate('(e)=>e.tagName')=='SELECT'
+ page.locator('#push-zone').select_option('America/New_York')
  page.locator('[data-reminder] input[type=time]').first.fill('09:15')
  for day in [0,2,4,5,6]:page.locator('[data-reminder]').first.locator(f'[data-weekday][value="{day}"]').uncheck()
  page.locator('#push-form [type=submit]').click()
@@ -30,6 +32,7 @@ with sync_playwright() as p:
  enrollment=next(c for c in calls if c[0]=='POST' and c[1].endswith('/push/subscription'))
  assert enrollment[3]['authorization']=='Bearer '+'a'*64
  assert 'x-enrollment-key' not in enrollment[3]
+ assert json.loads(enrollment[2])['settings']['timeZone']=='America/New_York'
  assert json.loads(enrollment[2])['settings']['reminders'][0]['time']=='09:15'
  assert json.loads(enrollment[2])['settings']['reminders'][0]['days']==[1,3]
  saved=json.loads(page.evaluate('localStorage.getItem("silent-warrior-push-v1")'))
