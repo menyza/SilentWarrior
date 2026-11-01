@@ -64,3 +64,30 @@ test('personal schedules, delivery and disable per device; scheduler includes mo
   assert.equal((await handle(request(path(ids[20])+'/test','POST',undefined,b),env)).status,429);
  }finally{globalThis.fetch=oldFetch;}
 });
+
+test('water intervals deduplicate each slot, keep sending after a water habit mark and stop at the daily goal',async()=>{
+ const env=await setup(),id=await enroll(env,subscription('interval-water')),date='2026-11-01';
+ const prefs={timeZone:'Asia/Jerusalem',reminders:[{id:'water',kind:'water',intervalMinutes:60}]};
+ assert.equal((await handle(request(path(id),'PUT',prefs,a),env)).status,200);
+ const snapshot=(await import('../../account-data.js')).emptySnapshot();snapshot.state.days[date]={'1-6':'done'};
+ await handle(request('/account/data','PUT',{revision:0,snapshot},a),env);
+ const oldFetch=globalThis.fetch;let sends=0;globalThis.fetch=async()=>{sends++;return new Response(null,{status:201});};
+ try{
+  await scheduled(env,new Date('2026-11-01T06:55:00Z'));assert.equal(sends,0);
+  await scheduled(env,new Date('2026-11-01T07:00:00Z'));await scheduled(env,new Date('2026-11-01T07:05:00Z'));assert.equal(sends,1);
+  await scheduled(env,new Date('2026-11-01T08:00:00Z'));assert.equal(sends,2);
+  snapshot.state.waterGoal=1000;snapshot.state.water={[date]:{'11111111-1111-4111-8111-111111111111':{kind:'water',ml:1000,at:100}}};
+  assert.equal((await handle(request('/account/data','PUT',{revision:1,snapshot},a),env)).status,200);
+  await scheduled(env,new Date('2026-11-01T09:00:00Z'));assert.equal(sends,2);
+  await scheduled(env,new Date('2026-11-01T21:05:00Z'));assert.equal(sends,2);
+ }finally{globalThis.fetch=oldFetch;}
+});
+test('habit delivery uses the owning account completion and suppresses only that user after marking',async()=>{
+ const env=await setup(),alice=await enroll(env,subscription('habit-alice'),a),bob=await enroll(env,subscription('habit-bob'),b);
+ const prefs={timeZone:'UTC',reminders:[{id:'reading',kind:'habit',habitId:'1-1',topic:'קריאה',time:'12:00'}]};
+ await handle(request(path(alice),'PUT',prefs,a),env);await handle(request(path(bob),'PUT',prefs,b),env);
+ const snapshot=(await import('../../account-data.js')).emptySnapshot();snapshot.state.days['2026-11-01']={'1-1':'done'};
+ await handle(request('/account/data','PUT',{revision:0,snapshot},a),env);
+ const oldFetch=globalThis.fetch,sent=[];globalThis.fetch=async url=>{sent.push(url);return new Response(null,{status:201});};
+ try{await scheduled(env,new Date('2026-11-01T12:00:00Z'));assert.deepEqual(sent,['https://web.push.apple.com/habit-bob']);await scheduled(env,new Date('2026-11-01T12:05:00Z'));assert.equal(sent.length,1);}finally{globalThis.fetch=oldFetch;}
+});

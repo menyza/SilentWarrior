@@ -39,6 +39,23 @@ with sync_playwright() as p:
  page.locator('[data-reminder] input[type=time]').first.fill('10:30');page.locator('#push-form [type=submit]').click()
  page.wait_for_function("document.querySelector('#push-status').textContent.includes('נשמרו בשירות')")
  assert any(c[0]=='PUT' and c[1].endswith('/push/subscription/device-a') for c in calls)
+ # Personal habit and periodic water settings persist across panel renders and saving.
+ page.locator('#add-water-reminder').click()
+ page.locator('[data-interval]').select_option('120')
+ page.locator('#add-reminder').click()
+ page.locator('[data-reminder-type]').last.select_option('habit:0-0')
+ page.locator('[data-reminder] input[type=time]').last.fill('11:30')
+ page.locator('[data-page="appearance"]').click();page.locator('[data-page="notifications"]').click()
+ assert page.locator('[data-interval]').input_value()=='120'
+ assert page.locator('[data-reminder-type]').last.input_value()=='habit:0-0'
+ page.locator('#push-form [type=submit]').click()
+ page.wait_for_function("document.querySelector('#push-status').textContent.includes('נשמרו בשירות')")
+ settings=json.loads([c for c in calls if c[0]=='PUT' and c[1].endswith('/push/subscription/device-a')][-1][2])
+ assert settings['reminders'][-2]['kind']=='water' and settings['reminders'][-2]['intervalMinutes']==120
+ assert settings['reminders'][-1]['habitId']=='0-0' and settings['reminders'][-1]['time']=='11:30'
+ page.reload();page.wait_for_function("document.querySelector('#cloud-indicator').textContent==='שמור בחשבון'")
+ page.locator('[data-page="settings"]').click();page.locator('[data-page="notifications"]').click()
+ assert page.locator('[data-interval]').input_value()=='120'
  pending=[]
  page.route('**/push/subscription/device-a/test',lambda r:pending.append(r))
  page.locator('#push-test').click();page.wait_for_function("document.querySelector('#push-status').textContent.includes('שולח התראת בדיקה')")

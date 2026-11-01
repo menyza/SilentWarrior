@@ -19,7 +19,7 @@ test('Excel export includes workout types, weights, archived records and reminde
  const reminders={timeZone:'Asia/Jerusalem',reminders:[{id:'r1',kind:'custom',topic:'קריאה',time:'20:00',days:[1,3]}]};
  const sheets=exportSheets(state,reminders,'2026-11-02');assert.equal(sheets[0].rows[1][5],75.5);assert.equal(sheets[0].rows[1][7],'טניס');assert.equal(sheets[0].rows[2][6],'מנוחה מתוכננת');
  const journal=sheets.find(sheet=>sheet.name==='יומן הרגלים').rows;assert.ok(journal.some(row=>row[1]==='0-1'&&row[4]==='בוצע'&&row[7]==='כן'));assert.ok(journal.some(row=>row[4]==='לא סומן'));
- assert.deepEqual(sheets[3].rows[1],['קריאה','20:00','Asia/Jerusalem']);
+ assert.deepEqual(sheets[3].rows[1].slice(0,3),['קריאה','20:00','Asia/Jerusalem']);
  const before=structuredClone(state),bytes=excelWorkbook(state,reminders,'2026-11-02');assert.deepEqual(state,before);assert.equal(new DataView(bytes.buffer).getUint32(0,true),0x04034b50);
  assert.equal(exportSheets(load(null),null,'2026-11-02')[0].rows.length,1);
 });

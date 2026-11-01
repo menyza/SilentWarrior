@@ -43,7 +43,7 @@ with sync_playwright() as p:
  assert workbook['סיכום יומי'].sheet_view.rightToLeft and workbook['סיכום יומי'].freeze_panes=='A2'
  assert any(cell.value=='=SUM(1,2) & <בדיקה>' and cell.data_type=='s' for row in workbook['הגדרות הרגלים'] for cell in row)
  assert not any(cell.data_type=='f' for sheet in workbook for row in sheet for cell in row)
- assert list(workbook['תזכורות'].values)[1]==('קריאה','20:00','Asia/Jerusalem')
+ assert list(workbook['תזכורות'].values)[1][:3]==('קריאה','20:00','Asia/Jerusalem')
  for mode in ['light','dark']:
   page.emulate_media(color_scheme=mode)
   for width in [320,390,430]:

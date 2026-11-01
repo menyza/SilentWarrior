@@ -22,6 +22,7 @@ with sync_playwright() as p:
  assert page.locator('#push-zone option:checked').inner_text()=='ישראל — ירושלים'
  for topic in ['טניס','מים','שקילה']:
   page.locator('#add-reminder').click();row=page.locator('[data-reminder]').last
+  row.locator('[data-reminder-type]').select_option('custom')
   row.locator('[data-topic]').fill(topic);row.locator('[type=time]').fill('14:30')
  page.locator('[data-reminder]').last.locator('[data-remove-reminder]').click();assert page.locator('[data-reminder]').count()==4
  page.locator('#push-zone').select_option('America/New_York')

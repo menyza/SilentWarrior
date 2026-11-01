@@ -10,6 +10,12 @@ export function dueReminders(value,now=new Date()){
  const s=settings(value),parts=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:s.timeZone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(now).map(p=>[p.type,p.value]));
  const minute=Number(parts.hour)*60+Number(parts.minute),date=`${parts.year}-${parts.month}-${parts.day}`;
  return s.reminders.flatMap(r=>{
+  if(r.kind==='water'){
+   if(minute<540||minute>1380)return [];
+   const slot=540+Math.floor((minute-540)/r.intervalMinutes)*r.intervalMinutes;
+   if(minute-slot>=10)return [];
+   return [{...r,date,slot:String(Math.floor(slot/60)).padStart(2,'0')+':'+String(slot%60).padStart(2,'0')}];
+  }
   const [h,m]=r.time.split(':').map(Number),difference=minute-h*60-m;
   // Cron can first encounter a 23:59 reminder after midnight. Attribute it to
   // the previous local calendar day.

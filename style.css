@@ -90,3 +90,5 @@ html[data-theme=dark]{--surface:#202c42;--surface-soft:#293954;--ink:#e3eafb;--s
 .daypart-ring{display:grid;place-items:center;flex-shrink:0;width:28px;height:28px;border-radius:50%;background:conic-gradient(#7d81c4 var(--fill),var(--line,#e0e7f5) 0);direction:ltr;transition:--fill .5s ease}
 .daypart-ring>span{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--surface,#fff);font-size:9px;color:var(--ink);font-weight:600}.daypart-ring small{font-size:6px;color:inherit}
 @media(max-width:350px){.day-tabs button{gap:3px}.day-tabs .daypart-name{font-size:10px}.daypart-ring{width:25px;height:25px}.daypart-ring>span{width:20px;height:20px;font-size:8px}}
+
+.reminder-row select{width:100%;min-width:0;min-height:44px;border:1px solid var(--line,#c8d4e5);border-radius:9px;background:var(--surface,#fff);color:var(--ink);padding:8px;font:inherit;font-size:16px}.reminder-window{flex-basis:100%;font-size:11px;line-height:1.6;color:var(--subtle);margin:3px 0}.reminder-row>label{min-width:135px}#add-water-reminder{margin-top:8px}

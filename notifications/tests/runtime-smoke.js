@@ -38,6 +38,10 @@ try{
  const enrolled=await request('/push/subscription','POST',{subscription:{endpoint:'https://web.push.apple.com/account-runtime',keys:{p256dh:ec.getPublicKey().toString('base64url'),auth:randomBytes(16).toString('base64url')}},settings:{timeZone:'UTC',reminders:[{kind:'evening',time:'20:15'}]}},{Authorization:`Bearer ${session}`});
  assert.equal(enrolled.status,201);const {id}=await enrolled.json(),device='/push/subscription/'+id;
  assert.equal((await request(device,'DELETE',null,{Authorization:`Bearer ${other}`})).status,404);
+ const personal={timeZone:'Asia/Jerusalem',reminders:[{id:'water',kind:'water',intervalMinutes:60},{id:'reading',kind:'habit',habitId:'0-0',topic:'מים בבוקר',time:'10:30'}]};
+ assert.equal((await request(device,'PUT',personal,{Authorization:`Bearer ${session}`})).status,200);
+ const storedPrefs=JSON.parse((await db.prepare('SELECT settings FROM subscriptions WHERE id=?').bind(device.split('/').at(-1)).first()).settings);
+ assert.equal(storedPrefs.reminders[0].intervalMinutes,60);assert.equal(storedPrefs.reminders[1].habitId,'0-0');
  assert.equal((await request(device,'PUT',{timeZone:'UTC',reminders:[]},{Authorization:`Bearer ${session}`})).status,200);
  assert.equal((await request(device+'/test','POST',null,{Authorization:`Bearer ${session}`})).status,200);
  assert.equal((await request(device,'DELETE',null,{Authorization:`Bearer ${session}`})).status,200);
