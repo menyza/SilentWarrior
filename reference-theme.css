@@ -170,3 +170,11 @@ header{height:68px;min-height:68px}
 [data-theme=dark] .compact-panel .panel-heading{background:#1c3443ed;color:#edf5f7}
 [data-theme=dark] .compact-panel .panel-heading>span{color:#c3d2dc}
 @media(max-height:600px){.compact-panel .panel-heading{padding:3px 6px;margin:1px 0 4px}}
+
+#drink-feedback:not([hidden]){display:block;border-radius:12px;padding:12px 14px;margin:10px 0;font-size:14px;font-weight:700;line-height:1.6;border:1px solid #8abea0;background:#e3f4e7;color:#245f3c}
+#drink-feedback.failed{background:#fff0eb;border-color:#dca18e;color:#8a3523}
+.drink-presets .drink-added{background:#e3f4e7;border:2px solid #4c946a;box-shadow:0 0 0 2px #4c946a18}
+.drink-added-label{font-weight:750;color:#276643!important}
+#workout-options [data-workout-rest]{border-color:#6d9c83;background:#e7f3e8;color:#305e43}
+.workout-rest-note{grid-column:1/-1;margin:2px 0 0}
+[data-theme=dark] #drink-feedback:not([hidden]),[data-theme=dark] .drink-presets .drink-added,[data-theme=dark] #workout-options [data-workout-rest]{background:#264937;color:#d7f0df;border-color:#699c7c}

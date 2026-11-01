@@ -15,7 +15,7 @@ with sync_playwright() as p:
  page.add_init_script("if(!localStorage.getItem('silent-warrior-v1'))localStorage.setItem('silent-warrior-v1',JSON.stringify({habitConfigVersion:1,removedHabits:['0-1'],days:{'2026-11-02':{'0-0':'done'},'2026-11-03':{'0-0':'done'}}}))")
  page.goto(f'http://127.0.0.1:{server.server_port}')
  assert page.locator('[data-reporting-streak]').get_attribute('data-reporting-streak')=='2'
- page.locator('#open-water').click();page.locator('[data-drink-kind=coffee]').click();page.locator('[data-drink-ml="1000"]').click();page.locator('#close-water').click()
+ page.locator('#open-water').click();page.locator('[data-drink-kind=coffee]').click();assert 'נוספו 200' in page.locator('#drink-feedback').inner_text();assert page.locator('[data-drink-kind=coffee]').get_attribute('class')=='drink-added';page.locator('[data-drink-ml="1000"]').click();assert 'נוספו 1000' in page.locator('#drink-feedback').inner_text();assert '1,200' in page.locator('#drink-feedback').inner_text();page.locator('#close-water').click()
  assert '1200 / 2000' in page.locator('[data-gauge=water]').inner_text()
  assert page.locator('[data-reporting-streak]').get_attribute('data-reporting-streak')=='3'
  page.locator('[data-group="בוקר"]').click();page.locator('[data-check="0-0"]').click();page.locator('[data-check="0-11"]').click()
@@ -29,7 +29,7 @@ with sync_playwright() as p:
  entries=page.evaluate("JSON.parse(localStorage.getItem('silent-warrior-v1')).water['2026-11-04']")
  coffee=next(key for key,value in entries.items() if value and value['kind']=='coffee')
  page.locator(f'[data-remove-drink="{coffee}"]').click()
- page.locator('#drink-kind').select_option('tea');page.locator('#drink-ml').fill('375');page.locator('#drink-form [type=submit]').click();page.locator('#close-water').click()
+ page.locator('#drink-kind').select_option('tea');page.locator('#drink-ml').fill('375');page.locator('#drink-form [type=submit]').click();assert 'נוספו 375' in page.locator('#drink-feedback').inner_text();page.locator('#close-water').click()
  assert '2625 / 2000' in page.locator('[data-gauge=water]').inner_text()
  page.locator('[data-page="settings"]').click();page.locator('#water-goal').fill('3000');page.locator('#water-goal-form [type=submit]').click()
  page.reload();page.locator('[data-page="today"]').click();assert '2625 / 3000' in page.locator('[data-gauge=water]').inner_text()
@@ -42,6 +42,14 @@ with sync_playwright() as p:
   dims=page.locator('.habit-panel').evaluate('(e)=>[e.scrollHeight,e.clientHeight]');assert dims[0]<=dims[1]+1,(w,h,dims)
  page.set_viewport_size({'width':390,'height':664});page.screenshot(path='/tmp/warrior-hydration-home.png')
  page.locator('#open-water').click();page.screenshot(path='/tmp/warrior-hydration-dialog.png')
+ page.locator('#close-water').click();page.locator('[data-group="במהלך היום"]').click();page.locator('[data-check="1-2"]').click()
+ page.locator('[data-workout-rest]').click();assert page.locator('[data-check="1-2"]').get_attribute('aria-pressed')=='true'
+ assert 'יום מנוחה' in page.locator('[data-check="1-2"]').inner_text()
+ assert '0 / 3' in page.locator('[data-gauge=weekly]').inner_text()
+ page.reload();page.locator('[data-group="במהלך היום"]').click()
+ assert 'יום מנוחה' in page.locator('[data-check="1-2"]').inner_text()
+ assert page.evaluate("JSON.parse(localStorage.getItem('silent-warrior-v1')).days['2026-11-04']['1-2']")== 'rest'
+ page.locator('[data-check="1-2"]').click();assert page.locator('[data-check="1-2"]').get_attribute('aria-pressed')=='false'
  assert not errors,errors
  browser.close()
 server.shutdown();print('PASS: drink presets and custom amounts, all automatic contributions, undo/recheck, deletion, goal persistence, streaks, charts and mobile fit')
