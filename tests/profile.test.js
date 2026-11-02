@@ -20,13 +20,19 @@ test('Independent edits of an existing profile merge across devices',()=>{
 
 test('Latest dated weight reports drive current metrics and auto water goals without rewriting manual targets',()=>{
  const state=emptySnapshot().state;state.profile={...profile,creatine:true,waterGoalMode:'auto'};state.weights={'2026-11-01':72,'2026-11-02':80,'2026-11-03':90};
- assert.deepEqual(currentProfileWeight(state,'2026-11-02'),{weightKg:80,date:'2026-11-02'});assert.equal(syncProfileWaterGoal(state,'2026-11-02'),true);assert.equal(state.waterGoal,2400);
+ assert.deepEqual(currentProfileWeight(state,'2026-11-02'),{weightKg:80,date:'2026-11-02'});assert.equal(syncProfileWaterGoal(state,'2026-11-02'),true);assert.equal(state.waterGoal,2700);
  state.weights['2026-10-31']=65;assert.equal(currentProfileWeight(state,'2026-11-02').weightKg,80);
- delete state.weights['2026-11-02'];assert.equal(currentProfileWeight(state,'2026-11-02').weightKg,72);syncProfileWaterGoal(state,'2026-11-02');assert.equal(state.waterGoal,2200);
+ delete state.weights['2026-11-02'];assert.equal(currentProfileWeight(state,'2026-11-02').weightKg,72);syncProfileWaterGoal(state,'2026-11-02');assert.equal(state.waterGoal,2500);
  state.profile.waterGoalMode='manual';state.waterGoal=2600;state.weights['2026-11-02']=75;assert.equal(syncProfileWaterGoal(state,'2026-11-02'),false);assert.equal(state.waterGoal,2600);
 });
-test('Creatine preference is persisted and validated without inventing an extra fluid requirement',()=>{
+test('Creatine preference is persisted and validated as a personal 300 ml addition rather than a medical requirement',()=>{
  const state=emptySnapshot();state.state.profile={...profile,creatine:true,waterGoalMode:'auto'};
- assert.equal(normalizeSnapshot(state).state.profile.creatine,true);assert.equal(profileEstimate(70,175).waterMl,2100);
+ assert.equal(normalizeSnapshot(state).state.profile.creatine,true);assert.equal(profileEstimate(70,175).waterMl,2100);assert.equal(profileEstimate(70,175,{creatine:true}).waterMl,2400);
  state.state.profile.creatine='yes';assert.throws(()=>normalizeSnapshot(state));
+});
+
+test('Personal creatine addition is applied once and removed when unchecked',()=>{
+ const state=emptySnapshot().state;state.profile={...profile,creatine:true,waterGoalMode:'auto'};
+ syncProfileWaterGoal(state,'2026-11-02');assert.equal(state.waterGoal,2400);assert.equal(syncProfileWaterGoal(state,'2026-11-02'),false);assert.equal(state.waterGoal,2400);
+ state.profile.creatine=false;syncProfileWaterGoal(state,'2026-11-02');assert.equal(state.waterGoal,2100);
 });

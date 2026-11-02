@@ -14,12 +14,12 @@ try:
   page.route('https://silentwarrior.menyzakar142.workers.dev/**',lambda r:r.fulfill(status=200,content_type='application/json',body='{"providers":[]}'))
   page.goto(f'http://127.0.0.1:{server.server_port}');page.locator('[data-page="settings"]').click();page.locator('[data-page="profile"]').click()
   assert page.locator('#profile-weight').input_value()=='72';assert page.locator('#profile-weight').get_attribute('readonly') is not None
-  page.locator('#profile-creatine').check();assert page.locator('#creatine-water-note').is_visible();assert page.locator('#profile-water-goal').input_value()=='2200'
+  page.locator('#profile-creatine').check();assert page.locator('#creatine-water-note').is_visible();assert page.locator('#profile-water-goal').input_value()=='2500'
   page.locator('#profile-form [type=submit]').click()
   assert page.evaluate("JSON.parse(localStorage.getItem('silent-warrior-v1')).profile.creatine") is True
   assert page.evaluate("JSON.parse(localStorage.getItem('silent-warrior-v1')).weights['2026-11-02']===undefined")
   page.locator('[data-page="weight"]').first.click();page.locator('#weight-date').fill('2026-11-02');page.locator('#weight-value').fill('80');page.locator('#weight-form [type=submit]').click()
-  assert page.evaluate("JSON.parse(localStorage.getItem('silent-warrior-v1')).waterGoal")==2400
+  assert page.evaluate("JSON.parse(localStorage.getItem('silent-warrior-v1')).waterGoal")==2700
   page.locator('[data-page="settings"]').click();page.locator('[data-page="profile"]').click();assert page.locator('#profile-weight').input_value()=='80';assert page.locator('#profile-bmi').inner_text()=='26.1';assert page.locator('#profile-creatine').is_checked()
   page.locator('#profile-water-goal').fill('2600');page.locator('#profile-form [type=submit]').click()
   assert page.evaluate("JSON.parse(localStorage.getItem('silent-warrior-v1')).profile.waterGoalMode")=='manual'
