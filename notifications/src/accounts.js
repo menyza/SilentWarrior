@@ -117,6 +117,11 @@ export async function accountRequest(request,env){
     const previous=await env.DB.prepare('SELECT data FROM account_documents WHERE user_id=?').bind(user.id).first();
     const previousState=previous?JSON.parse(previous.data)?.state:null;
     if(!Object.hasOwn(data.snapshot.state,'customWorkoutTypes')&&previousState?.workouts&&data.snapshot.state.workouts&&typeof data.snapshot.state.workouts==='object'&&!Array.isArray(data.snapshot.state.workouts))data.snapshot.state.workouts={...previousState.workouts,...data.snapshot.state.workouts};
+    const profile=data.snapshot.state.profile;
+    if(profile&&typeof profile==='object'&&!Array.isArray(profile)&&previousState?.profile){
+     if(!Object.hasOwn(profile,'waterGoalMode')&&previousState.profile.waterGoalMode==='auto'&&data.snapshot.state.waterGoal!==undefined&&data.snapshot.state.waterGoal!==previousState.waterGoal)profile.waterGoalMode='manual';
+     for(const field of ['creatine','waterGoalMode'])if(!Object.hasOwn(profile,field)&&Object.hasOwn(previousState.profile,field))profile[field]=previousState.profile[field];
+    }
     for(const field of ['workouts','weeklyWorkoutGoal','water','waterGoal','customWorkoutTypes','habitTimes','profile'])if(!Object.hasOwn(data.snapshot.state,field)&&previousState&&Object.hasOwn(previousState,field))data.snapshot.state[field]=previousState[field];
    }
    const snapshot=normalizeSnapshot(data.snapshot),now=Date.now();

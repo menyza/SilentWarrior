@@ -271,3 +271,10 @@ header{height:68px;min-height:68px}
 .is-account-entry main{display:block;overflow:auto}
 #onboarding-back{min-height:44px;background:none;border:0;color:var(--green);font:inherit;font-size:12px}
 .profile-health-note,.profile-data-note{font-size:11px;line-height:1.75}
+
+#profile-form .creatine-choice{display:flex;align-items:center;gap:9px;min-height:44px;margin:10px 0 2px;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+#profile-form .creatine-choice input{width:20px;height:20px;min-height:20px;margin:0;padding:0;accent-color:#2d826c;flex-shrink:0}
+.creatine-choice span{font-size:13px;font-weight:600}
+.profile-weight-source{font-size:11px;line-height:1.7;color:var(--subtle);margin:8px 0}
+.profile-weight-source button{background:none;border:0;min-height:32px;color:var(--green);text-decoration:underline;font:inherit;font-size:11px;padding:2px 4px}
+#profile-form input[readonly]{background:var(--surface-soft);color:var(--subtle)}

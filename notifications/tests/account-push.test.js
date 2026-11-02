@@ -130,3 +130,14 @@ test('Personal metrics are private to the owner and survive legacy saves without
  const saved=await (await handle(request('/account/data','GET',undefined,a),env)).json();assert.deepEqual(saved.snapshot.state.profile,snapshot.state.profile);assert.equal(saved.snapshot.state.waterGoal,2400);
  const invalid=structuredClone(snapshot);invalid.state.profile.heightCm=0;assert.equal((await handle(request('/account/data','PUT',{revision:2,snapshot:invalid},a),env)).status,400);
 });
+
+test('Legacy profile saves retain creatine preference and honor explicitly changed water targets',async()=>{
+ const env=await setup(),{emptySnapshot}=await import('../../account-data.js'),snapshot=emptySnapshot();
+ snapshot.state.profile={sex:'male',weightKg:70,heightCm:175,completedAt:Date.now(),creatine:true,waterGoalMode:'auto'};snapshot.state.waterGoal=2100;
+ assert.equal((await handle(request('/account/data','PUT',{revision:0,snapshot},a),env)).status,200);
+ const legacy=structuredClone(snapshot);delete legacy.state.profile.creatine;delete legacy.state.profile.waterGoalMode;
+ assert.equal((await handle(request('/account/data','PUT',{revision:1,snapshot:legacy},a),env)).status,200);
+ let saved=await (await handle(request('/account/data','GET',undefined,a),env)).json();assert.equal(saved.snapshot.state.profile.creatine,true);assert.equal(saved.snapshot.state.profile.waterGoalMode,'auto');
+ legacy.state.waterGoal=2500;assert.equal((await handle(request('/account/data','PUT',{revision:2,snapshot:legacy},a),env)).status,200);
+ saved=await (await handle(request('/account/data','GET',undefined,a),env)).json();assert.equal(saved.snapshot.state.profile.creatine,true);assert.equal(saved.snapshot.state.profile.waterGoalMode,'manual');assert.equal(saved.snapshot.state.waterGoal,2500);
+});
