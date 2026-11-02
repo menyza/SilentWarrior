@@ -9,6 +9,7 @@ server=ThreadingHTTPServer(('127.0.0.1',0),partial(SimpleHTTPRequestHandler,dire
 with sync_playwright() as p:
  browser=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
  page=browser.new_page(viewport={'width':390,'height':664},timezone_id='Asia/Jerusalem')
+ page.add_init_script("localStorage.setItem('levelup-onboarding-v1','legacy')")  # Existing-user regression fixture.
  page.clock.install(time=datetime(2026,11,4,12,0,tzinfo=ZoneInfo('Asia/Jerusalem')))
  errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.route('https://silentwarrior.menyzakar142.workers.dev/**',lambda r:r.fulfill(status=200,content_type='application/json',body='{"providers":[]}'))

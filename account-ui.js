@@ -5,6 +5,7 @@ const SESSION='silent-warrior-account-v1',BASE='silent-warrior-account-base-v1',
 const API=()=>document.querySelector('meta[name="account-api"]')?.content||'https://silentwarrior.menyzakar142.workers.dev';
 let socialProviders=null;
 let hooks=null,auth=read(SESSION),baseline=read(BASE),pending=null,conflict=null,busy=false,syncing=false,dirty=false,syncRun=null,message='',phase=auth?.token?'checking':'guest',timer;
+export function accountState(){return {phase,message,providers:socialProviders,busy};}
 export function pushAccount(){return auth?.token?{token:auth.token,id:auth.user.id,url:API()}:null;}
 function read(key){try{return JSON.parse(localStorage.getItem(key));}catch{return null;}}
 function store(key,value){localStorage.setItem(key,JSON.stringify(value));}
@@ -16,7 +17,8 @@ async function api(path,{method='GET',body,token=auth?.token}={}){const controll
 function view(rebuild=false){const header=document.querySelector('#cloud-indicator');if(header){header.textContent=phase==='ready'?(dirty?'ממתין לסנכרון':'שמור בחשבון'):phase==='syncing'?'מסנכרן…':phase==='conflict'?'נדרשת בחירה':auth?.token?'ממתין לחיבור':'שמירה מקומית';header.title=message;}
  const status=document.querySelector('#account-status');if(status)status.textContent=message;
  if(rebuild)hooks?.changed();
- document.querySelectorAll('#account-register button,#account-login,[data-social]').forEach(button=>{button.disabled=busy;});
+ document.querySelectorAll('#account-register button,#account-login,[data-social]').forEach(button=>{button.disabled=busy||!!(button.dataset.social&&!socialProviders?.includes(button.dataset.social))||button.dataset.onboardingPending==='true';});
+ document.dispatchEvent(new Event('account-view-changed'));
 }
 function setPhase(value,text,rebuild=false){phase=value;message=text;view(rebuild);}
 function downloaded(snapshot,name='silent-warrior-backup'){const file={format:'silent-warrior-backup',exportedAt:new Date().toISOString(),snapshot};const url=URL.createObjectURL(new Blob([JSON.stringify(file,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name+'-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
@@ -86,7 +88,7 @@ export function initAccount(options){hooks=options;
  document.addEventListener('local-data-changed',changed);document.addEventListener('habit-order-changed',e=>{if(e.detail.saved)changed();});document.addEventListener('reminders-changed',changed);
  document.addEventListener('submit',e=>{if(e.target.id!=='account-register')return;e.preventDefault();if(e.target.reportValidity())authenticate('register',e.target);});
  document.addEventListener('click',async e=>{const button=e.target.closest('button');if(!button||!button.id.startsWith('account-'))return;try{
- if(button.dataset.social){if(busy)return;if(auth?.token){await synchronize();if(dirty||pending||conflict||phase!=='ready')throw new Error('לפני קישור כניסה נוספת יש להשלים סנכרון ולפתור בחירות ממתינות.');}busy=true;view();try{await beginSocial(api,button.dataset.social,auth?.user?.id);}catch(error){busy=false;view();throw error;}return;}
+ if(button.dataset.social){if(busy)return;const signingIn=button.hasAttribute('data-onboarding-pending');if(auth?.token&&!signingIn){await synchronize();if(dirty||pending||conflict||phase!=='ready')throw new Error('לפני קישור כניסה נוספת יש להשלים סנכרון ולפתור בחירות ממתינות.');}busy=true;view();try{await beginSocial(api,button.dataset.social,auth?.user?.id,!!auth?.token&&!signingIn);}catch(error){busy=false;view();throw error;}return;}
  switch(button.id){
  case 'account-login':await authenticate('login');break;
  case 'account-sync':await synchronize();break;

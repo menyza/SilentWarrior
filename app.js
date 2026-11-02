@@ -1,3 +1,5 @@
+import {welcomeScreen,profileScreen,updateProfilePreview} from './onboarding.js';
+import {validProfile,profileEstimate} from './profile.js';
 import {recordHabitChanges} from './habit-timing.js';
 import {habitEmoji,flameIcon} from './emoji.js';
 import {waterButton,waterDialog} from './hydration-view.js';
@@ -7,8 +9,8 @@ import {downloadExcel} from './excel-export.js';
 import {reviewScreen} from './progress-view.js';
 import {themePreference,setTheme} from './theme.js';
 import {weightScreen} from './weight-view.js';
-import {accountPanel,initAccount,pushAccount} from './account-ui.js';
-import {normalizeSnapshot} from './account-data.js';
+import {accountPanel,initAccount,pushAccount,accountState} from './account-ui.js';
+import {normalizeSnapshot,meaningful} from './account-data.js';
 import {addHabit,archiveHabit,restoreHabit,habitGroups,habitIcons,escapeHtml,cleanHabitOverrides} from './habit-catalog.js';
 import {readOrder,moveHabit,initReorder} from './reorder.js';
 import {pushPanel,initPush} from './push-ui.js';
@@ -17,6 +19,10 @@ import {periodDates,movePeriod,streaks,weeklyWorkoutProgress,shiftDay,reportingS
 import {availableWorkoutTypes,cleanCustomWorkoutTypes,allHabits,activeHabits,dayKey,load,completed,toggle,dailyScore,earnedPoints,groupProgress,dailyProgress} from './model.js';
 const storageKey='silent-warrior-v1';let state;let storageOK=true;
 try{state=load(localStorage.getItem(storageKey));}catch{state=load(null);storageOK=false;}
+const onboardingKey='levelup-onboarding-v1';let onboardingLegacy=false,onboardingAccount=false,profileReadyOwner=null;
+try{const flow=localStorage.getItem(onboardingKey);onboardingLegacy=['legacy','complete'].includes(flow);if(!flow){onboardingLegacy=['silent-warrior-v1','silent-warrior-account-v1','silent-warrior-push-v1'].some(key=>localStorage.getItem(key)!==null);localStorage.setItem(onboardingKey,onboardingLegacy?'legacy':'pending');}}catch{}
+function needsOnboarding(){return !onboardingLegacy&&!state.profile&&!meaningful({state,order:[],reminders:null});}
+function openingScreen(){if(!needsOnboarding())return '';const account=pushAccount(),status=accountState();if(account&&status.phase==='ready')profileReadyOwner=account.id;if(account&&profileReadyOwner===account.id&&['ready','syncing','offline'].includes(status.phase))return profileScreen(state,true);if(onboardingAccount&&page==='account')return '';return welcomeScreen(status,!!account);}
 let habits=allHabits(state),habitPage=0,pendingWorkout=null;
 const loginReturn=new URLSearchParams(location.search);
 let page=loginReturn.has('state')&&(loginReturn.has('code')||loginReturn.has('error'))?'account':'today',selected=dayKey(),group=new Date().getHours()<12?'בוקר':new Date().getHours()<18?'במהלך היום':'ערב';
@@ -35,7 +41,7 @@ const pages=Math.max(1,Math.ceil(list.length/12));habitPage=Math.min(habitPage,p
 return `<section class="habit-panel compact-panel" aria-label="הרגלי ${group}"><div class="panel-heading"><h2>${group}</h2><span>${pending.length} נשארו · ${done.length} הושלמו</span>${pages>1?`<div class="habit-pager"><button data-habit-page="${habitPage-1}" ${habitPage===0?'disabled':''} aria-label="עמוד הרגלים קודם">→</button><span><bdi>${habitPage+1}/${pages}</bdi></span><button data-habit-page="${habitPage+1}" ${habitPage===pages-1?'disabled':''} aria-label="עמוד הרגלים הבא">←</button></div>`:''}</div><div class="cards compact-grid" data-full-order='${JSON.stringify(list.map(h=>h.id))}' style="--rows:${Math.max(1,Math.ceil(visible.length/3))};--columns:3">${visible.map(h=>card(h,key)).join('')}</div>${list.length===0?'<p class="empty">אין כאן הרגלים כרגע. אפשר להוסיף במסך ההרגלים שלי.</p>':''}</section>`;
 }
 function visibleHabits(key){return habits.filter(h=>!h.archived||((page==='history'||key<dayKey())&&['done','rest'].includes(state.days[key]?.[h.id])));}
-function settingsFrame(content){return `<section class="settings-screen"><div class="settings-heading"><div class="eyebrow">בדיוק כמו שמתאים לך</div><h1>הגדרות</h1></div><div class="settings-tabs" role="group" aria-label="קטגוריות הגדרות">${[['account','חשבון והרשמה','☁'],['notifications','התראות ושעות','♧'],['habits','הרגלים ונקודות','☷'],['appearance','מראה','◐']].map(([key,label,icon])=>`<button data-page="${key}" aria-pressed="${page===key}" class="${page===key?'selected':''}"><span>${icon}</span>${label}</button>`).join('')}</div><div class="settings-content">${content}</div></section>`;}
+function settingsFrame(content){return `<section class="settings-screen"><div class="settings-heading"><div class="eyebrow">בדיוק כמו שמתאים לך</div><h1>הגדרות</h1></div><div class="settings-tabs" role="group" aria-label="קטגוריות הגדרות">${[['account','חשבון והרשמה','☁'],['profile','המדדים שלי','◇'],['notifications','התראות ושעות','♧'],['habits','הרגלים ונקודות','☷'],['appearance','מראה','◐']].map(([key,label,icon])=>`<button data-page="${key}" aria-pressed="${page===key}" class="${page===key?'selected':''}"><span>${icon}</span>${label}</button>`).join('')}</div><div class="settings-content">${content}</div></section>`;}
 function appearancePanel(){return `<section class="appearance-panel settings-card"><h2>איך נוח לך לראות את היום?</h2><p class="hint">אפשר לבחור מראה קבוע או להתאים להגדרות המכשיר.</p><div class="theme-options" role="group" aria-label="מצב תצוגה">${[['light','☀','יום'],['dark','☾','לילה'],['auto','◐','אוטומטי']].map(([value,icon,label])=>`<button data-theme="${value}" aria-pressed="${themePreference()===value}"><span>${icon}</span>${label}</button>`).join('')}</div><p class="hint">הבחירה נשמרת במכשיר הזה. מצב אוטומטי משתנה יחד עם המכשיר.</p></section>`;}
 function habitEditor(){const h=habits.find(h=>h.id===editingHabit);if(!h)return '';return `<form id="edit-habit-form" class="habit-edit settings-card"><h3>עריכת הרגל</h3><label for="edit-habit-name">שם</label><input id="edit-habit-name" name="habitName" maxlength="60" required value="${escapeHtml(h.name)}"><div class="manager-fields"><div><label for="edit-habit-group">חלק ביום</label><select id="edit-habit-group" name="habitGroup">${habitGroups.map(g=>`<option ${g===h.group?'selected':''}>${g}</option>`).join('')}</select></div><div><label for="edit-habit-icon">אייקון</label><select id="edit-habit-icon" name="icon"><option value="" ${!h.icon?'selected':''}>ללא שינוי</option>${habitIcons.map(icon=>`<option ${icon===h.icon?'selected':''}>${icon}</option>`).join('')}</select></div></div><div class="manager-fields"><div><label for="edit-importance">חשיבות</label><select id="edit-importance" name="importance">${[1,2,3].map(v=>`<option ${v===h.importance?'selected':''}>${v}</option>`).join('')}</select></div><div><label for="edit-effort">מאמץ</label><select id="edit-effort" name="effort">${[1,2,3].map(v=>`<option ${v===h.effort?'selected':''}>${v}</option>`).join('')}</select></div></div><output aria-live="polite">${h.points} נקודות להשלמה</output><p class="hint">הניקוד מחושב לפי חשיבות ומאמץ. שינויו מעדכן גם את סיכומי העבר; הסימונים נשמרים.</p><button type="submit">שמירת שינויים</button><button type="button" id="cancel-edit-habit">ביטול</button></form>`;}
 
@@ -72,10 +78,11 @@ function card(h,key){const v=state.days[key]?.[h.id],done=['done','rest'].includ
 
 function progressRing(id,label,progress,unit){return `<div class="progress-gauge" data-gauge="${id}"><span class="score-ring" role="progressbar" aria-label="${escapeHtml(label)}" aria-valuemin="0" aria-valuemax="${progress.total||1}" aria-valuenow="${Math.min(progress.done,progress.total)}" aria-valuetext="${progress.percent} אחוזים, ${progress.done} מתוך ${progress.total}" style="--fill:${progress.percent}%"><span>${progress.percent}<small>%</small></span></span><strong>${escapeHtml(label)}</strong><small><bdi dir="ltr">${progress.done} / ${progress.total}</bdi> ${escapeHtml(unit)}</small></div>`;}
 
-function render(preserveDrafts=false){const openDetails=preserveDrafts?[...main.querySelectorAll('details')].map(el=>el.open):[];const drafts=preserveDrafts?[...main.querySelectorAll('input,select,textarea')].filter(el=>el.id&&el.type!=='file'&&((el.type==='checkbox'&&el.checked!==el.defaultChecked)||(el.tagName==='SELECT'&&el.value!==(el.querySelector('option[selected]')||el.options[0])?.value)||(el.tagName!=='SELECT'&&el.type!=='checkbox'&&el.value!==el.defaultValue))).map(el=>({id:el.id,value:el.value,checked:el.checked,focused:el===document.activeElement})):[];habits=allHabits(state);const maxDailyPoints=activeHabits(state).reduce((sum,h)=>sum+h.points,0);const key=habitDate(),count=completed(state,key,page==='today'&&key===dayKey()),score=dailyScore(state,key),goal=state.dailyGoal;
-document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===(['account','habits','notifications','appearance'].includes(page)?'settings':page));b.setAttribute('aria-current',b.dataset.page===(['account','habits','notifications','appearance'].includes(page)?'settings':page)?'page':'false');});
+function render(preserveDrafts=false){const openDetails=preserveDrafts?[...main.querySelectorAll('details')].map(el=>el.open):[];const drafts=preserveDrafts?[...main.querySelectorAll('input,select,textarea')].filter(el=>el.id&&el.type!=='file'&&((el.type==='checkbox'&&el.checked!==el.defaultChecked)||(el.tagName==='SELECT'&&el.value!==(el.querySelector('option[selected]')||el.options[0])?.value)||(el.tagName!=='SELECT'&&el.type!=='checkbox'&&el.value!==el.defaultValue))).map(el=>({id:el.id,value:el.value,checked:el.checked,manual:el.dataset.manual,focused:el===document.activeElement})):[];habits=allHabits(state);const maxDailyPoints=activeHabits(state).reduce((sum,h)=>sum+h.points,0);const key=habitDate(),count=completed(state,key,page==='today'&&key===dayKey()),score=dailyScore(state,key),goal=state.dailyGoal;
+document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===(['account','profile','habits','notifications','appearance'].includes(page)?'settings':page));b.setAttribute('aria-current',b.dataset.page===(['account','profile','habits','notifications','appearance'].includes(page)?'settings':page)?'page':'false');});
 let html=`${!storageOK?'<aside class="warning" role="alert">השמירה במכשיר אינה זמינה. הסימונים עלולים להיעלם בסגירה.</aside>':''}`;
-if(page==='today'){
+const opening=openingScreen();document.querySelector('.app').classList.toggle('is-onboarding',!!opening);document.querySelector('.app').classList.toggle('is-account-entry',needsOnboarding()&&onboardingAccount&&!opening);
+if(opening){html+=opening;}else if(page==='today'){
 const reportRun=reportingStreak(state).current;
 html+=`<div class="screen-top">${dayNavigation()}<div class="today-title"><div><h1>יום ${journeyDay(state,key)} למסע</h1><span class="report-streak" data-reporting-streak="${reportRun}">${flameIcon} ${reportRun} ימי דיווח ברצף</span></div><button class="day-count" id="review-day" aria-label="סיכום היום">סיכום יום</button><button type="button" id="open-water" class="add-water-button" aria-label="הוספת שתייה"><svg viewBox="0 0 40 44" aria-hidden="true"><path d="M8 7h24l-3 31H11Z" fill="#dff5ff" stroke="#418cb2" stroke-width="2"/><path d="M10 20q5-3 10 0t10 0l-2 16H12Z" fill="#65c3e6"/><path d="M13 11l1 21" stroke="white" stroke-width="3" stroke-linecap="round"/></svg><span>הוספת שתייה<small>כוס מים, קפה או משקה אחר</small></span><b aria-hidden="true">＋</b></button></div><section class="daily-meter circle-only progress-overview" aria-label="ההתקדמות שלי">${waterButton(state,key)}${progressRing('daily','היום כולו',dailyProgress(state,key),'הרגלים')}${progressRing('weekly','אימונים השבוע',weeklyWorkoutProgress(state,key),'אימונים')}<span class="sr-only" role="status"></span></section>${groupTabs(key)}</div>${habitPanel(key)}`;
 }else if(page==='history'){
@@ -84,18 +91,19 @@ html+=`<div class="screen-top history-top"><button class="back-report" id="back-
 }else{
 html+=reviewScreen(state,{mode:periodMode,anchor:periodAnchor,today:dayKey()});
 }
-}else if(page==='account'){html+=accountPanel();
+}else if(page==='account'){html+=(needsOnboarding()?'<button id="onboarding-back" type="button">→ חזרה למסך הכניסה</button>':'')+accountPanel();
 }else if(page==='weight'){
 html+=weightScreen(state.weights,dayKey(),weightDate,weightPeriod);
 }else if(page==='notifications'){html+=pushPanel(state);
+}else if(page==='profile'){html+=profileScreen(state);
 }else if(page==='appearance'){html+=appearancePanel();
 }else{
 html+=`<div class="eyebrow">כל הרגל בונה את הבסיס</div><h1>ההרגלים שלי</h1>${habitManager()}<section class="goal-settings"><h2>היעד היומי שלי</h2><p class="hint">הניקוד הוא הצעה התחלתית לפי חשיבות אישית ומאמץ, מ־5 עד 25 נקודות להרגל. בחר יעד שמתאים לך. המקסימום היומי הוא ${maxDailyPoints} נקודות.</p><form id="goal-form"><label for="daily-goal">יעד נקודות ליום</label><div class="goal-input"><input id="daily-goal" name="goal" type="number" inputmode="numeric" min="10" max="${Math.max(goal,maxDailyPoints,10)}" step="5" required value="${goal}"><button type="submit">שמירת יעד</button></div></form><p class="hint">יעד הנקודות משמש לחגיגת ההשלמה. אחוז ההתקדמות היומי מחושב מכל ההרגלים הפעילים.</p><h2>יעד האימונים השבועי שלי</h2><form id="workout-goal-form"><label for="weekly-workout-goal">מספר אימונים בשבוע</label><div class="goal-input"><input id="weekly-workout-goal" name="workoutGoal" type="number" inputmode="numeric" min="1" max="7" step="1" required value="${state.weeklyWorkoutGoal}"><button type="submit">שמירת יעד אימונים</button></div></form><p class="hint">השבוע מתחיל ביום ראשון. יום מנוחה אינו אימון. היסטוריית האימונים נשמרת כשהשבוע מתחלף.</p><h2>יעד השתייה שלי</h2><form id="water-goal-form"><label for="water-goal">יעד יומי במ״ל</label><div class="goal-input"><input id="water-goal" name="waterGoal" type="number" inputmode="numeric" min="100" max="10000" step="1" required value="${state.waterGoal}"><button type="submit">שמירת יעד שתייה</button></div></form><p class="hint">היעד אישי וניתן לשינוי. כל המשקאות נספרים, כולל קפה ושייק.</p></section>`;
 }
-if(['account','habits','notifications','appearance'].includes(page))html=settingsFrame(html);
+if(!opening&&['account','profile','habits','notifications','appearance'].includes(page))html=settingsFrame(html);
 const scroll=main.querySelector('.habit-panel')?.scrollTop||0;
-main.innerHTML=html;if(preserveDrafts)main.querySelectorAll('details').forEach((el,index)=>{if(openDetails[index]!==undefined)el.open=openDetails[index];});for(const draft of drafts){const el=document.getElementById(draft.id);if(el){el.value=draft.value;if(el.type==='checkbox')el.checked=draft.checked;if(draft.focused)el.focus({preventScroll:true});}}
-if(main.querySelector('.habit-panel'))main.querySelector('.habit-panel').scrollTop=scroll;
+main.innerHTML=html;if(preserveDrafts)main.querySelectorAll('details').forEach((el,index)=>{if(openDetails[index]!==undefined)el.open=openDetails[index];});for(const draft of drafts){const el=document.getElementById(draft.id);if(el){el.value=draft.value;if(draft.manual!==undefined)el.dataset.manual=draft.manual;if(el.type==='checkbox')el.checked=draft.checked;if(draft.focused)el.focus({preventScroll:true});}}
+if(main.querySelector('.habit-panel'))main.querySelector('.habit-panel').scrollTop=scroll;updateProfilePreview();
 }
 function renderWorkoutOptions(){document.querySelector('#workout-options').innerHTML=availableWorkoutTypes(state).map(type=>`<button data-workout="${escapeHtml(type)}">${escapeHtml(type)}</button>`).join('')+'<button type="button" data-workout-rest>יום מנוחה</button><p class="hint workout-rest-note">מנוחה משלימה את ההרגל היומי ואינה נספרת ביעד האימונים השבועי.</p>';}
 function refreshWater(reset=false){const dialog=document.querySelector('#water-dialog');if(reset){dialog.dataset.view='add';dialog.dataset.historyPage='0';}dialog.innerHTML=waterDialog(state,dialog.dataset.date,{view:dialog.dataset.view||'add',page:Number(dialog.dataset.historyPage)||0});dialog.scrollTop=0;}
@@ -157,8 +165,9 @@ document.addEventListener('habit-drag-start',()=>toast('גרור למיקום ה
 document.addEventListener('change',e=>{if(e.target.closest('#add-habit-form')){const form=document.querySelector('#add-habit-form');document.querySelector('#new-habit-points').textContent=5*(Number(form.elements.importance.value)+Number(form.elements.effort.value)-1)+' נקודות להשלמה';}});
 
 function captureAccountSnapshot(){let order=[],reminders=null;try{order=JSON.parse(localStorage.getItem('silent-warrior-order-v1'))||[];}catch{}try{const shared=localStorage.getItem('silent-warrior-reminder-preferences');reminders=shared!==null?JSON.parse(shared):JSON.parse(localStorage.getItem('silent-warrior-push-v1'))?.settings||null;}catch{}return normalizeSnapshot({schemaVersion:1,state,order,reminders});}
-function applyAccountSnapshot(raw){const snapshot=normalizeSnapshot(raw);state=load(JSON.stringify(snapshot.state));localStorage.setItem(storageKey,JSON.stringify(state));localStorage.setItem('silent-warrior-order-v1',JSON.stringify(snapshot.order));localStorage.setItem('silent-warrior-reminder-preferences',JSON.stringify(snapshot.reminders));storageOK=true;render(true);}
-initAccount({capture:captureAccountSnapshot,apply:applyAccountSnapshot,changed:()=>{if(['account','notifications'].includes(page))render(true);}});
+function applyAccountSnapshot(raw){const wasOpening=needsOnboarding(),snapshot=normalizeSnapshot(raw);state=load(JSON.stringify(snapshot.state));if(wasOpening&&meaningful(snapshot)){onboardingLegacy=true;try{localStorage.setItem(onboardingKey,'complete');}catch{}page='today';}localStorage.setItem(storageKey,JSON.stringify(state));localStorage.setItem('silent-warrior-order-v1',JSON.stringify(snapshot.order));localStorage.setItem('silent-warrior-reminder-preferences',JSON.stringify(snapshot.reminders));storageOK=true;render(true);}
+document.addEventListener('account-view-changed',()=>{if(needsOnboarding()||document.querySelector('.app').classList.contains('is-onboarding'))render(true);});
+initAccount({capture:captureAccountSnapshot,apply:applyAccountSnapshot,changed:()=>{if(needsOnboarding()||['account','notifications'].includes(page))render(true);}});
 
 document.addEventListener('input',e=>{const form=e.target.closest('#edit-habit-form');if(form)form.querySelector('output').textContent=5*(Number(form.elements.importance.value)+Number(form.elements.effort.value)-1)+' נקודות להשלמה';});
 
@@ -171,4 +180,21 @@ document.addEventListener('submit',e=>{
  if(!cleanCustomWorkoutTypes([name]).length||availableWorkoutTypes(state).some(type=>type.toLocaleLowerCase()===name.toLocaleLowerCase())){message.textContent='יש להזין שם חדש ותקין, עד 40 תווים.';return;}
  if(state.customWorkoutTypes.length>=50){message.textContent='אפשר להוסיף עד 50 סוגי אימון אישיים.';return;}
  state.customWorkoutTypes.push(name);save();renderWorkoutOptions();input.value='';message.textContent=storageOK?'הסוג נוסף לרשימה. אפשר לבחור בו כעת.':'לא ניתן לשמור במכשיר.';
+});
+
+document.addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ if(b.id==='onboarding-back'){onboardingAccount=false;render();return;}
+ if(b.id==='onboarding-account'){onboardingAccount=true;page='account';render();return;}
+ if(b.id==='use-water-estimate'){const form=document.querySelector('#profile-form'),estimate=profileEstimate(Number(form.elements.weightKg.value),Number(form.elements.heightCm.value));if(estimate){form.elements.waterGoal.value=estimate.waterMl;form.elements.waterGoal.dataset.manual='true';}else form.elements.weightKg.focus();}
+});
+document.addEventListener('input',e=>{if(!e.target.closest('#profile-form'))return;if(e.target.id==='profile-water-goal')e.target.dataset.manual='true';updateProfilePreview();});
+document.addEventListener('submit',e=>{
+ if(e.target.id!=='profile-form')return;e.preventDefault();const form=e.target;if(!form.reportValidity())return;
+ if(form.dataset.onboarding==='true'&&(!pushAccount()||profileReadyOwner!==pushAccount().id||!['ready','syncing','offline'].includes(accountState().phase))){document.querySelector('#profile-status').textContent='יש להשלים את הכניסה והטעינה מהחשבון לפני השמירה.';return;}
+ const profile={sex:form.elements.sex.value,weightKg:Number(form.elements.weightKg.value),heightCm:Number(form.elements.heightCm.value),completedAt:state.profile?.completedAt||Date.now()},goal=Number(form.elements.waterGoal.value);
+ if(!validProfile(profile)||!Number.isInteger(goal)||goal<100||goal>10000)return;
+ const before=structuredClone(state);state.profile=profile;state.waterGoal=goal;state.weights[dayKey()]??=profile.weightKg;save();
+ if(!storageOK){state=before;document.querySelector('#profile-status').textContent='לא ניתן לשמור במכשיר. יש לאפשר אחסון ולנסות שוב.';return;}
+ onboardingLegacy=true;try{localStorage.setItem(onboardingKey,'complete');}catch{}if(form.dataset.onboarding==='true')page='today';render();toast('המדדים ויעד השתייה נשמרו');
 });

@@ -7,6 +7,7 @@ server=ThreadingHTTPServer(('127.0.0.1',0),partial(SimpleHTTPRequestHandler,dire
 with sync_playwright() as p:
  b=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
  page=b.new_page(viewport={'width':390,'height':664},is_mobile=True,has_touch=True)
+ page.add_init_script("localStorage.setItem('levelup-onboarding-v1','legacy')")  # Existing-user regression fixture.
  errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.goto(f'http://127.0.0.1:{server.server_port}');page.locator('[data-group="בוקר"]').click()
  assert page.locator('[data-check="0-1"]').count()==0

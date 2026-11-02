@@ -1,3 +1,4 @@
+import {validProfile} from './profile.js';
 import {validHabitTimes} from './habit-timing.js';
 import {validWater} from './hydration.js';
 import {reminderSettings} from './reminder-settings.js';
@@ -12,6 +13,7 @@ export function normalizeSnapshot(raw){
  if(JSON.stringify(raw).length>900000)invalid();
  if(raw.state.water!==undefined&&!validWater(raw.state.water))invalid();
  if(raw.state.waterGoal!==undefined&&(!Number.isInteger(raw.state.waterGoal)||raw.state.waterGoal<100||raw.state.waterGoal>10000))invalid();
+ if(raw.state.profile!==undefined&&raw.state.profile!==null&&!validProfile(raw.state.profile))invalid();
  const input=raw.state,custom=cleanCustomHabits(input.customHabits||[]);
  if(!Array.isArray(input.customHabits||[])||custom.length!==(input.customHabits||[]).length)invalid();
  const ids=new Set([...habits,...custom].map(h=>h.id));
@@ -32,7 +34,7 @@ export function normalizeSnapshot(raw){
  return {schemaVersion:1,state,order:[...new Set(raw.order)],reminders};
 }
 export function emptySnapshot(){return {schemaVersion:1,state:load(null),order:[],reminders:null};}
-export function meaningful(snapshot){const s=snapshot.state;return Object.values(s.days).some(m=>Object.values(m).some(v=>v==='done'||v==='rest'))||Object.keys(s.weights).length>0||Object.keys(s.reflections).length>0||s.customHabits.length>0||(s.customWorkoutTypes||[]).length>0||!equal(s.removedHabits,['0-1'])||Object.values(s.water||{}).some(entries=>Object.values(entries).some(Boolean))||(s.waterGoal||2000)!==2000||s.dailyGoal!==200||(s.weeklyWorkoutGoal||3)!==3||Object.keys(s.habitOverrides||{}).length>0||snapshot.order.length>0||snapshot.reminders!==null;}
+export function meaningful(snapshot){const s=snapshot.state;return !!s.profile||Object.values(s.days).some(m=>Object.values(m).some(v=>v==='done'||v==='rest'))||Object.keys(s.weights).length>0||Object.keys(s.reflections).length>0||s.customHabits.length>0||(s.customWorkoutTypes||[]).length>0||!equal(s.removedHabits,['0-1'])||Object.values(s.water||{}).some(entries=>Object.values(entries).some(Boolean))||(s.waterGoal||2000)!==2000||s.dailyGoal!==200||(s.weeklyWorkoutGoal||3)!==3||Object.keys(s.habitOverrides||{}).length>0||snapshot.order.length>0||snapshot.reminders!==null;}
 // Three-way merge. Independent edits merge; conflicting values require an explicit choice.
 export function mergeSnapshots(base,local,remote,prefer='remote'){
  const conflicts=[];

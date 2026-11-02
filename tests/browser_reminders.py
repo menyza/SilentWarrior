@@ -8,6 +8,7 @@ server=ThreadingHTTPServer(('127.0.0.1',0),partial(SimpleHTTPRequestHandler,dire
 with sync_playwright() as p:
  b=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
  page=b.new_page(viewport={'width':390,'height':664})
+ page.add_init_script("localStorage.setItem('levelup-onboarding-v1','legacy')")  # Existing-user regression fixture.
  errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.add_init_script("""Element.prototype.scrollIntoView=function(){throw new TypeError('Unsupported scroll options')};if(!localStorage.getItem('silent-warrior-push-v1'))localStorage.setItem('silent-warrior-push-v1',JSON.stringify({url:'https://silentwarrior.menyzakar142.workers.dev',token:'a'.repeat(64),settings:{timeZone:'Asia/Jerusalem',reminders:[{kind:'morning',time:'08:00'},{kind:'evening',time:'21:00'}]}}));window.__unsubscribed=false;const sub={unsubscribe:async()=>{window.__unsubscribed=true;return true}};const registration={pushManager:{getSubscription:async()=>sub}};Object.defineProperty(navigator,'serviceWorker',{value:{register:async()=>registration,getRegistration:async()=>registration}});""")
  calls=[]

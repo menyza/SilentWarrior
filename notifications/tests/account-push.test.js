@@ -119,3 +119,14 @@ test('Adaptive habit scheduling uses only owner timing, deduplicates, skips comp
   await scheduled(env,new Date('2026-11-03T08:30:00Z'));assert.equal(sent.length,2);
  }finally{globalThis.fetch=oldFetch;}
 });
+
+test('Personal metrics are private to the owner and survive legacy saves without replacing the water goal',async()=>{
+ const env=await setup(),{emptySnapshot}=await import('../../account-data.js'),snapshot=emptySnapshot();
+ snapshot.state.profile={sex:'female',weightKg:65,heightCm:170,completedAt:Date.now()};snapshot.state.waterGoal=2400;
+ assert.equal((await handle(request('/account/data','PUT',{revision:0,snapshot},a),env)).status,200);
+ const other=await (await handle(request('/account/data','GET',undefined,b),env)).json();assert.equal(other.snapshot,null);
+ const legacy=structuredClone(snapshot);delete legacy.state.profile;
+ assert.equal((await handle(request('/account/data','PUT',{revision:1,snapshot:legacy},a),env)).status,200);
+ const saved=await (await handle(request('/account/data','GET',undefined,a),env)).json();assert.deepEqual(saved.snapshot.state.profile,snapshot.state.profile);assert.equal(saved.snapshot.state.waterGoal,2400);
+ const invalid=structuredClone(snapshot);invalid.state.profile.heightCm=0;assert.equal((await handle(request('/account/data','PUT',{revision:2,snapshot:invalid},a),env)).status,400);
+});

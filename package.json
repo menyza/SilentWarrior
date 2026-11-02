@@ -1,1 +1,15 @@
-{"name":"silent-warrior","version":"0.1.0","private":true,"type":"module","scripts":{"start":"python3 -m http.server 3000 --bind 0.0.0.0","test":"node --test tests/*.test.js"}}
+{
+  "name": "silent-warrior",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 3000 --bind 0.0.0.0",
+    "test": "node --test tests/*.test.js",
+    "build": "esbuild app.js --bundle --format=esm --target=safari16.4 --minify --outfile=app.bundle.js",
+    "pretest": "npm run build"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

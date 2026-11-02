@@ -8,6 +8,7 @@ url=f'http://127.0.0.1:{server.server_port}/'
 with sync_playwright() as p:
  b=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
  page=b.new_page(viewport={'width':390,'height':664},is_mobile=True,has_touch=True)
+ page.add_init_script("localStorage.setItem('levelup-onboarding-v1','legacy')")  # Existing-user regression fixture.
  page.set_viewport_size({'width':390,'height':664});errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.add_init_script("window.__spotifyOpens=[];window.open=url=>{window.__spotifyOpens.push(url);return null}")
  page.goto(url);page.locator('[data-group="בוקר"]').click()

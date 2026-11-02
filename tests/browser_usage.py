@@ -7,6 +7,7 @@ server=ThreadingHTTPServer(('127.0.0.1',0),partial(SimpleHTTPRequestHandler,dire
 with sync_playwright() as p:
  browser=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
  page=browser.new_page();page.clock.install();received={};errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+ page.add_init_script("localStorage.setItem('levelup-onboarding-v1','legacy')")  # Existing-user regression fixture.
  page.add_init_script("localStorage.setItem('silent-warrior-account-v1',JSON.stringify({token:'a'.repeat(64),user:{id:'A',displayName:'Alice'}}));window.__hidden=false;Object.defineProperty(document,'hidden',{configurable:true,get:()=>window.__hidden})")
  def route(r):
   path=r.request.url

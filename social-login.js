@@ -1,10 +1,10 @@
 // OAuth authorization-code + PKCE: verifier stays in this tab, never in a URL.
 const KEY='silent-warrior-social-request-v1';
 const encode=value=>btoa(String.fromCharCode(...new Uint8Array(value))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-export async function beginSocial(api,provider,owner){
+export async function beginSocial(api,provider,owner,link=!!owner){
  const verifier=encode(crypto.getRandomValues(new Uint8Array(32)));
  const pkce=encode(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier)));
- const result=await api('/account/social/start',{method:'POST',body:{provider,pkce,link:!!owner}});
+ const result=await api('/account/social/start',{method:'POST',body:{provider,pkce,link}});
  // Fail before navigating when tab storage is unavailable. The app data remains.
  sessionStorage.setItem(KEY,JSON.stringify({state:result.state,verifier,owner:owner||null,createdAt:Date.now()}));
  location.assign(result.url);

@@ -9,6 +9,7 @@ try:
  with sync_playwright() as p:
   browser=p.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
   page=browser.new_page(viewport={'width':390,'height':780},device_scale_factor=2)
+  page.add_init_script("localStorage.setItem('levelup-onboarding-v1','legacy')")  # Existing-user regression fixture.
   page.goto(f'http://127.0.0.1:{server.server_port}');page.evaluate('document.fonts.ready');page.emulate_media(reduced_motion='reduce')
   assert 'LevelUp' in page.locator('.brand').inner_text()
   assert 'למסע' in page.locator('.today-title h1').inner_text()

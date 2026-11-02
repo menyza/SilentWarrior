@@ -10,6 +10,7 @@ threading.Thread(target=server.serve_forever,daemon=True).start()
 with sync_playwright() as p:
  browser=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
  page=browser.new_page(viewport={'width':390,'height':744},is_mobile=True,has_touch=True)
+ page.add_init_script("localStorage.setItem('levelup-onboarding-v1','legacy')")  # Existing-user regression fixture.
  errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.route('https://silentwarrior.menyzakar142.workers.dev/**',lambda r:r.fulfill(status=200,content_type='application/json',body='{"providers":[]}'))
  page.add_init_script('''if(!localStorage.getItem('silent-warrior-v1')){const day=(n)=>{const d=new Date();d.setDate(d.getDate()-n);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};localStorage.setItem('silent-warrior-v1',JSON.stringify({habitConfigVersion:1,weights:{[day(0)]:75.2,[day(1)]:75.5,[day(7)]:76,[day(40)]:77},days:{[day(0)]:{'0-0':'done'}}}));}''')

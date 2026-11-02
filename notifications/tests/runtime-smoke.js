@@ -22,11 +22,11 @@ try{
   await db.prepare('INSERT INTO accounts(id,display_name,created_at) VALUES (?,?,?)').bind(id,id,Date.now()).run();
   await db.prepare('INSERT INTO account_sessions(token_hash,user_id,expires_at) VALUES (?,?,?)').bind(await hash(value),id,Date.now()+60000).run();
  }
- const snapshot=emptySnapshot();snapshot.state.habitTimes={'2026-11-01':{'1-2':Date.parse('2026-11-01T10:00:00+02:00')}};snapshot.state.weeklyWorkoutGoal=4;snapshot.state.waterGoal=3000;snapshot.state.water={'2026-11-01':{'11111111-1111-4111-8111-111111111111':{kind:'coffee',ml:200,at:100}}};snapshot.state.days['2026-11-01']={'1-2':'done'};snapshot.state.workouts['2026-11-01']='טניס';snapshot.reminders={timeZone:'Asia/Jerusalem',reminders:[{id:'tennis',kind:'custom',topic:'טניס',time:'18:00'}]};
+ const snapshot=emptySnapshot();snapshot.state.profile={sex:'male',weightKg:75,heightCm:180,completedAt:Date.now()};snapshot.state.habitTimes={'2026-11-01':{'1-2':Date.parse('2026-11-01T10:00:00+02:00')}};snapshot.state.weeklyWorkoutGoal=4;snapshot.state.waterGoal=3000;snapshot.state.water={'2026-11-01':{'11111111-1111-4111-8111-111111111111':{kind:'coffee',ml:200,at:100}}};snapshot.state.days['2026-11-01']={'1-2':'done'};snapshot.state.workouts['2026-11-01']='טניס';snapshot.reminders={timeZone:'Asia/Jerusalem',reminders:[{id:'tennis',kind:'custom',topic:'טניס',time:'18:00'}]};
  assert.equal((await request('/account/data','PUT',{revision:0,snapshot},{Authorization:`Bearer ${session}`})).status,200);
  const restored=await (await request('/account/data','GET',null,{Authorization:`Bearer ${session}`})).json();
  assert.deepEqual(restored.snapshot,snapshot);
- const legacy=structuredClone(snapshot);delete legacy.state.workouts;delete legacy.state.weeklyWorkoutGoal;delete legacy.state.water;delete legacy.state.waterGoal;delete legacy.state.habitTimes;
+ const legacy=structuredClone(snapshot);delete legacy.state.workouts;delete legacy.state.weeklyWorkoutGoal;delete legacy.state.water;delete legacy.state.waterGoal;delete legacy.state.habitTimes;delete legacy.state.profile;
  assert.equal((await request('/account/data','PUT',{revision:1,snapshot:legacy},{Authorization:`Bearer ${session}`})).status,200);
  const afterLegacy=await (await request('/account/data','GET',null,{Authorization:`Bearer ${session}`})).json();assert.deepEqual(afterLegacy.snapshot,snapshot);
  const otherDocument=await (await request('/account/data','GET',null,{Authorization:`Bearer ${other}`})).json();assert.equal(otherDocument.snapshot,null);

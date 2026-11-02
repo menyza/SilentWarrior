@@ -9,6 +9,7 @@ with sync_playwright() as p:
  browser=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
  context=browser.new_context(viewport={'width':390,'height':744},service_workers='block')
  page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+ page.add_init_script("localStorage.setItem('levelup-onboarding-v1','legacy')")  # Existing-user regression fixture.
  flows={};verified=[];starts=[];token='c'*64;owner={'id':'social-owner','displayName':'בדיקת Google'}
  def backend(route):
   request=route.request;path=urlparse(request.url).path
