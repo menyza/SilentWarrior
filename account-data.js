@@ -1,3 +1,4 @@
+import {validHabitTimes} from './habit-timing.js';
 import {validWater} from './hydration.js';
 import {reminderSettings} from './reminder-settings.js';
 import {load,habits,workoutTypes,cleanCustomWorkoutTypes} from './model.js';
@@ -14,6 +15,7 @@ export function normalizeSnapshot(raw){
  const input=raw.state,custom=cleanCustomHabits(input.customHabits||[]);
  if(!Array.isArray(input.customHabits||[])||custom.length!==(input.customHabits||[]).length)invalid();
  const ids=new Set([...habits,...custom].map(h=>h.id));
+ if(input.habitTimes!==undefined&&!validHabitTimes(input.habitTimes,ids))invalid();
  if(input.habitOverrides!==undefined&&(!object(input.habitOverrides)||Object.keys(cleanHabitOverrides(input.habitOverrides,ids)).length!==Object.keys(input.habitOverrides).length))invalid();
  if(!object(input.days||{})||!object(input.weights||{})||!object(input.reflections||{}))invalid();
  for(const [date,marks] of Object.entries(input.days||{})){if(!validDate(date)||!object(marks))invalid();for(const [id,status] of Object.entries(marks)){if(!ids.has(id)||!['done','rest',null].includes(status))invalid();}}

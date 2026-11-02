@@ -45,6 +45,8 @@ with sync_playwright() as p:
  page.locator('#add-reminder').click()
  page.locator('[data-reminder-type]').last.select_option('habit:0-0')
  page.locator('[data-reminder] input[type=time]').last.fill('11:30')
+ page.locator('[data-reminder-schedule]').last.select_option('adaptive')
+ assert 'בתהליך למידה' in page.locator('#reminder-list').inner_text()
  page.locator('[data-page="appearance"]').click();page.locator('[data-page="notifications"]').click()
  assert page.locator('[data-interval]').input_value()=='120'
  assert page.locator('[data-reminder-type]').last.input_value()=='habit:0-0'
@@ -53,9 +55,11 @@ with sync_playwright() as p:
  settings=json.loads([c for c in calls if c[0]=='PUT' and c[1].endswith('/push/subscription/device-a')][-1][2])
  assert settings['reminders'][-2]['kind']=='water' and settings['reminders'][-2]['intervalMinutes']==120
  assert settings['reminders'][-1]['habitId']=='0-0' and settings['reminders'][-1]['time']=='11:30'
+ assert settings['reminders'][-1]['adaptive'] is True
  page.reload();page.wait_for_function("document.querySelector('#cloud-indicator').textContent==='שמור בחשבון'")
  page.locator('[data-page="settings"]').click();page.locator('[data-page="notifications"]').click()
  assert page.locator('[data-interval]').input_value()=='120'
+ assert page.locator('[data-reminder-schedule]').last.input_value()=='adaptive'
  pending=[]
  page.route('**/push/subscription/device-a/test',lambda r:pending.append(r))
  page.locator('#push-test').click();page.wait_for_function("document.querySelector('#push-status').textContent.includes('שולח התראת בדיקה')")

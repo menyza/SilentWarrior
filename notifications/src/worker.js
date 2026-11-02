@@ -1,3 +1,4 @@
+import {adaptiveSettings} from '../../habit-timing.js';
 import {contextual,reminderState,reminderMessage} from './reminder-context.js';
 import {accountSession,accountRequest} from './accounts.js';
 import webpush from 'web-push';
@@ -95,7 +96,7 @@ export async function scheduled(env,now=new Date()){
  while(true){
  const {results}=await env.DB.prepare('SELECT * FROM subscriptions WHERE id>? ORDER BY id LIMIT 100').bind(cursor).all();
  if(!results.length)break;cursor=results.at(-1).id;
- for(const row of results){let due;try{due=dueReminders(JSON.parse(row.settings),now);}catch{continue;}
+ for(const row of results){let due;try{let prefs=JSON.parse(row.settings);if(prefs.reminders?.some(r=>r.kind==='habit'&&r.adaptive))prefs=adaptiveSettings(prefs,await reminderState(env.DB,row.id),now);due=dueReminders(prefs,now);}catch{continue;}
   for(const reminder of due){
    let state=null;try{if(contextual(reminder))state=await reminderState(env.DB,row.id);}catch{continue;}
    if(!reminderMessage(reminder,state))continue;

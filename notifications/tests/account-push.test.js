@@ -101,3 +101,21 @@ test('Custom workout types and history persist across legacy account saves',asyn
  const saved=await (await handle(request('/account/data','GET',undefined,token),env)).json();
  assert.deepEqual(saved.snapshot.state.customWorkoutTypes,['פילאטיס']);assert.equal(saved.snapshot.state.workouts['2026-11-01'],'פילאטיס');
 });
+
+test('Adaptive habit scheduling uses only owner timing, deduplicates, skips completed habits and preserves timestamps on legacy saves',async()=>{
+ const env=await setup(),{emptySnapshot}=await import('../../account-data.js'),snapshot=emptySnapshot();
+ for(let n=26;n<=30;n++){const date=`2026-10-${n}`;snapshot.state.days[date]={'1-1':'done'};snapshot.state.habitTimes[date]={'1-1':Date.parse(date+'T10:00:00+02:00')};}
+ assert.equal((await handle(request('/account/data','PUT',{revision:0,snapshot},a),env)).status,200);
+ const settings={timeZone:'Asia/Jerusalem',reminders:[{id:'read',kind:'habit',habitId:'1-1',topic:'קריאה',time:'18:00',adaptive:true}]};
+ await enroll(env,subscription('learned-alice'),a,{settings});await enroll(env,subscription('fallback-bob'),b,{settings});
+ const oldFetch=globalThis.fetch,sent=[];globalThis.fetch=async url=>{sent.push(url);return new Response(null,{status:201});};
+ try{
+  await scheduled(env,new Date('2026-11-02T08:25:00Z'));assert.equal(sent.length,0);
+  await scheduled(env,new Date('2026-11-02T08:30:00Z'));await scheduled(env,new Date('2026-11-02T08:35:00Z'));assert.deepEqual(sent,['https://web.push.apple.com/learned-alice']);
+  await scheduled(env,new Date('2026-11-02T16:00:00Z'));assert.deepEqual(sent,['https://web.push.apple.com/learned-alice','https://web.push.apple.com/fallback-bob']);
+  const legacy=structuredClone(snapshot);delete legacy.state.habitTimes;assert.equal((await handle(request('/account/data','PUT',{revision:1,snapshot:legacy},a),env)).status,200);
+  const saved=await (await handle(request('/account/data','GET',undefined,a),env)).json();assert.deepEqual(saved.snapshot.state.habitTimes,snapshot.state.habitTimes);
+  saved.snapshot.state.days['2026-11-03']={'1-1':'done'};assert.equal((await handle(request('/account/data','PUT',{revision:2,snapshot:saved.snapshot},a),env)).status,200);
+  await scheduled(env,new Date('2026-11-03T08:30:00Z'));assert.equal(sent.length,2);
+ }finally{globalThis.fetch=oldFetch;}
+});

@@ -1,3 +1,4 @@
+import {recordHabitChanges} from './habit-timing.js';
 import {habitEmoji,flameIcon} from './emoji.js';
 import {waterButton,waterDialog} from './hydration-view.js';
 import {addDrink,removeDrink,waterDay,completeWaterHabit} from './hydration.js';
@@ -42,7 +43,7 @@ function habitManager(){return `<section class="habit-manager"><h2>ניהול ה
 
 const main=document.querySelector('main');
 const dateLabel=k=>new Date(k+'T12:00:00').toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'});
-function save(){completeWaterHabit(state,habitDate());try{localStorage.setItem(storageKey,JSON.stringify(state));storageOK=true;document.dispatchEvent(new CustomEvent('local-data-changed'));}catch{storageOK=false;} }
+function save(){completeWaterHabit(state,habitDate());try{let previous=null;try{previous=JSON.parse(localStorage.getItem(storageKey));}catch{}recordHabitChanges(state,previous,dayKey());localStorage.setItem(storageKey,JSON.stringify(state));storageOK=true;document.dispatchEvent(new CustomEvent('local-data-changed'));}catch{storageOK=false;} }
 function toast(t){document.querySelector('#toast').textContent=t;clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>document.querySelector('#toast').textContent='',2400);}
 function reward(h,key,before,after){
 const tile=document.querySelector(`[data-check="${h.id}"]`)?.closest('.habit-tile');

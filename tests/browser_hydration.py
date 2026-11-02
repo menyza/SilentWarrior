@@ -19,11 +19,12 @@ with sync_playwright() as p:
  assert '1200 / 2000' in page.locator('[data-gauge=water]').inner_text()
  assert page.locator('[data-reporting-streak]').get_attribute('data-reporting-streak')=='3'
  page.locator('[data-group="בוקר"]').click();page.locator('[data-check="0-0"]').click();page.locator('[data-check="0-11"]').click()
+ assert page.evaluate("Number.isSafeInteger(JSON.parse(localStorage.getItem('silent-warrior-v1')).habitTimes['2026-11-04']['0-0'])")
  page.locator('[data-group="במהלך היום"]').click();page.locator('[data-check="1-0"]').click()
  page.locator('[data-group="ערב"]').click();page.locator('[data-check="2-3"]').click()
  assert '2450 / 2000' in page.locator('[data-gauge=water]').inner_text()
  page.locator('[data-group="בוקר"]').click();assert page.locator('[data-habit-id="0-0"] .habit-streak').inner_text()=='3'
- page.locator('[data-check="0-0"]').click();assert '2200 / 2000' in page.locator('[data-gauge=water]').inner_text()
+ page.locator('[data-check="0-0"]').click();assert page.evaluate("JSON.parse(localStorage.getItem('silent-warrior-v1')).habitTimes['2026-11-04']['0-0']===null");assert '2200 / 2000' in page.locator('[data-gauge=water]').inner_text()
  page.locator('[data-check="0-0"]').click();assert '2450 / 2000' in page.locator('[data-gauge=water]').inner_text()
  page.locator('#open-water').click();page.locator('#water-history').click()
  entries=page.evaluate("JSON.parse(localStorage.getItem('silent-warrior-v1')).water['2026-11-04']")

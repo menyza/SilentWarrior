@@ -21,7 +21,8 @@ export function reminderSettings(value){
   if(typeof r.topic!=='string'||!r.topic.trim()||r.topic.trim().length>100)throw new Error('invalid_reminder');
   if(r.kind==='habit'){
    if(typeof r.habitId!=='string'||!/^(?:[012]-\d{1,2}|custom-[a-f0-9-]{36})$/.test(r.habitId))throw new Error('invalid_reminder');
-   return {id,kind:'habit',habitId:r.habitId,time:r.time,topic:r.topic.trim()};
+   if(r.adaptive!==undefined&&typeof r.adaptive!=='boolean')throw new Error('invalid_reminder');
+   return {id,kind:'habit',habitId:r.habitId,time:r.time,topic:r.topic.trim(),...(r.adaptive?{adaptive:true}:{})};
   }
   return {id,kind:'custom',time:r.time,topic:r.topic.trim()};
  });
