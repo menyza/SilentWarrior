@@ -313,3 +313,15 @@ header{height:68px;min-height:68px}
 @media(max-height:600px){.app.is-profile-screen .profile-screen{padding:8px 12px}.profile-screen .profile-head h1{font-size:21px}.profile-head{margin-bottom:4px}#profile-form{gap:4px}#profile-form :is(input,select){height:36px;min-height:36px;padding:4px 7px}#profile-form .profile-top-grid .creatine-choice{height:36px;min-height:36px}#profile-form .creatine-choice input{height:17px;min-height:17px;width:17px}#profile-form label{font-size:10px;margin-bottom:3px}.creatine-choice span{font-size:11px}.creatine-choice small{font-size:8px}.profile-screen .profile-estimates>div{padding:5px 4px}.profile-estimates strong{font-size:22px}.profile-estimates small,.profile-estimates span{font-size:9px}.profile-screen .profile-submit{min-height:38px}.profile-screen #profile-status{min-height:14px;font-size:10px}.profile-top-grid,.profile-goal-grid,.profile-screen .profile-measures{gap:7px}}
 .app.is-profile-screen{background:linear-gradient(145deg,#f6faf8,#edf3f1 65%,#eef3f8)}
 [data-theme=dark] .app.is-profile-screen{background:linear-gradient(145deg,#1b333c,#152a33)}
+
+#open-weekly-workouts{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;border-radius:12px}
+#weekly-workouts{width:370px;max-width:calc(100vw - 28px);max-height:85dvh;overflow:auto;padding:20px;border:1px solid var(--line);border-radius:20px;background:var(--surface);color:var(--ink)}
+#weekly-workouts h2{font-size:22px;margin:0 0 5px;line-height:1.4}
+.weekly-workouts-range{font-size:12px;color:var(--subtle);margin:0 0 12px}
+.weekly-workouts-count{font-size:14px;margin:8px 0 15px;color:var(--green);font-weight:700}
+.weekly-workouts-list{list-style:none;padding:0;margin:0 0 14px;display:grid;gap:7px}
+.weekly-workouts-list li{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:11px;padding:11px 10px;background:var(--surface-soft)}
+.weekly-workouts-list time{font-size:11px;color:var(--subtle)}
+.weekly-workouts-list strong{font-size:13px;overflow-wrap:anywhere;min-width:0}
+.weekly-workouts-empty{font-size:14px;line-height:1.8;margin:20px 0;color:var(--subtle)}
+#close-weekly-workouts{min-height:44px;width:100%;border:0;border-radius:10px;background:#276d59;color:white;font:inherit;font-size:13px}
