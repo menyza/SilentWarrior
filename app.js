@@ -1,3 +1,4 @@
+import {StretchAudio} from './stretch-audio.js';
 import {STRETCH_MS,createStretchTimer,stretchRemaining,toggleStretchTimer,restoreStretchTimer,stretchClock} from './stretch-timer.js';
 import {welcomeScreen,profileScreen,updateProfilePreview} from './onboarding.js';
 import {validProfile,profileEstimate,syncProfileWaterGoal} from './profile.js';
@@ -25,6 +26,7 @@ const onboardingKey='levelup-onboarding-v1';let onboardingLegacy=false,onboardin
 try{const flow=localStorage.getItem(onboardingKey);onboardingLegacy=['legacy','complete'].includes(flow);if(!flow){onboardingLegacy=['silent-warrior-v1','silent-warrior-account-v1','silent-warrior-push-v1'].some(key=>localStorage.getItem(key)!==null);localStorage.setItem(onboardingKey,onboardingLegacy?'legacy':'pending');}}catch{}
 function needsOnboarding(){return !onboardingLegacy&&!state.profile&&!meaningful({state,order:[],reminders:null});}
 function openingScreen(){if(!needsOnboarding())return '';const account=pushAccount(),status=accountState();if(account&&status.phase==='ready')profileReadyOwner=account.id;if(account&&profileReadyOwner===account.id&&['ready','syncing','offline'].includes(status.phase))return profileScreen(state,true);if(onboardingAccount&&page==='account')return '';return welcomeScreen(status,!!account);}
+const stretchSoundKey='levelup-stretch-sound-v1';let stretchSoundEnabled=true,stretchSoundNotice='';try{stretchSoundEnabled=localStorage.getItem(stretchSoundKey)!=='off';}catch{}const stretchAudio=new StretchAudio({onState:updateStretchSoundControls});
 const stretchKey='levelup-stretch-timer-v1';let stretchTimer=null;try{stretchTimer=restoreStretchTimer(localStorage.getItem(stretchKey),pushAccount()?.id||null);}catch{}
 let habits=allHabits(state),habitPage=0,pendingWorkout=null;
 const loginReturn=new URLSearchParams(location.search);
@@ -108,25 +110,36 @@ const scroll=main.querySelector('.habit-panel')?.scrollTop||0;
 main.innerHTML=html;document.querySelector('.app').classList.toggle('is-profile-screen',!!main.querySelector('.profile-screen'));if(preserveDrafts)main.querySelectorAll('details').forEach((el,index)=>{if(openDetails[index]!==undefined)el.open=openDetails[index];});for(const draft of drafts){const el=document.getElementById(draft.id);if(el){el.value=draft.value;if(draft.manual!==undefined)el.dataset.manual=draft.manual;if(el.type==='checkbox')el.checked=draft.checked;if(draft.focused)el.focus({preventScroll:true});}}
 if(main.querySelector('.habit-panel'))main.querySelector('.habit-panel').scrollTop=scroll;updateProfilePreview();if(document.querySelector('#weekly-workouts')?.open)renderWeeklyWorkouts();
 }
+function updateStretchSoundControls(){
+ const button=document.querySelector('#stretch-sound');if(button){const active=stretchSoundEnabled&&stretchAudio.ready;button.textContent=active?'צליל פעיל':stretchSoundEnabled?'הפעלת צליל':'צליל כבוי';button.setAttribute('aria-pressed',String(active));button.setAttribute('aria-label',active?'השתקת הצליל כל 30 שניות':'הפעלת צליל כל 30 שניות');}
+ const note=document.querySelector('#stretch-audio-note');if(note)note.textContent=stretchSoundNotice||(stretchSoundEnabled?'לשמיעת צפצוף בכל 30 שניות, יש להשאיר את האפליקציה פתוחה.':'הצליל מושתק. אפשר לעקוב לפי השעון והמקטעים.');
+}
+async function enableStretchSound(){
+ stretchAudio.stop();if(!stretchSoundEnabled||!stretchTimer){updateStretchSoundControls();return;}
+ const timer=stretchTimer,unlocked=await stretchAudio.unlock();
+ if(!unlocked)stretchSoundNotice='לא ניתן להפעיל צליל כעת. נסה/י שוב בלחיצה על הפעלת צליל.';
+ else{stretchSoundNotice='';if(stretchTimer===timer&&stretchSoundEnabled&&stretchTimer.running)stretchAudio.schedule(stretchRemaining(stretchTimer));}
+ updateStretchSoundControls();
+}
 function storeStretch(){try{if(stretchTimer)localStorage.setItem(stretchKey,JSON.stringify(stretchTimer));else localStorage.removeItem(stretchKey);}catch{}}
 function updateStretchTimer(){
  if(!stretchTimer)return;
- if(stretchTimer.owner!==(pushAccount()?.id||null)){stretchTimer=null;document.querySelector('#stretch-dialog').close();return;}
+ if(stretchTimer.owner!==(pushAccount()?.id||null)){stretchTimer=null;stretchAudio.stop();document.querySelector('#stretch-dialog').close();return;}
  const remaining=stretchRemaining(stretchTimer);
  if(stretchTimer.running&&remaining===0){stretchTimer={...stretchTimer,running:false,remainingMs:0,endsAt:null};storeStretch();}
  const output=document.querySelector('#stretch-clock');if(output)output.textContent=stretchClock(remaining);
  const ring=document.querySelector('#stretch-progress');if(ring)ring.style.setProperty('--fill',`${(1-remaining/STRETCH_MS)*100}%`);
  const pause=document.querySelector('#stretch-pause');if(pause){pause.textContent=stretchTimer.running?'עצירה':'המשך';pause.disabled=remaining===0;}
- const status=document.querySelector('#stretch-status'),message=remaining===0?'חמש הדקות הסתיימו. כשתסיים/י, אפשר לסמן שבוצע.':stretchTimer.running?'הטיימר פועל · בקצב שלך':'הטיימר מושהה';if(status&&status.textContent!==message)status.textContent=message;
+ const status=document.querySelector('#stretch-status'),message=remaining===0?'חמש הדקות הסתיימו. כשתסיים/י, אפשר לסמן שבוצע.':stretchTimer.running?`מקטע ${Math.min(10,Math.floor((STRETCH_MS-remaining)/30000)+1)} מתוך 10 · מעבר בכל 30 שניות`:'הטיימר מושהה';if(status&&status.textContent!==message)status.textContent=message;
  document.querySelectorAll('[data-stretch-inline]').forEach(el=>el.textContent=stretchClock(remaining));
 }
 function openStretch(date){
  const owner=pushAccount()?.id||null;if(!stretchTimer||stretchTimer.date!==date||stretchTimer.owner!==owner)stretchTimer=createStretchTimer(date,owner);
- storeStretch();document.querySelector('#stretch-date').textContent=dateLabel(date);updateStretchTimer();document.querySelector('#stretch-dialog').showModal();
+ enableStretchSound();storeStretch();document.querySelector('#stretch-date').textContent=dateLabel(date);updateStretchTimer();document.querySelector('#stretch-dialog').showModal();
 }
 document.querySelector('#stretch-dialog').addEventListener('close',()=>{if(stretchTimer)render();});
 setInterval(updateStretchTimer,1000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateStretchTimer();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){updateStretchTimer();stretchAudio.stop();if(stretchTimer?.running&&stretchSoundEnabled&&stretchAudio.ready)stretchAudio.schedule(stretchRemaining(stretchTimer));updateStretchSoundControls();}});
 document.addEventListener('account-session-changed',()=>{updateStretchTimer();});
 function renderWeeklyWorkouts(){
  const dialog=document.querySelector('#weekly-workouts'),date=dialog.dataset.date||habitDate(),dates=periodDates('week',date),progress=weeklyWorkoutProgress(state,date),completedDates=dates.filter(day=>day<=date&&state.days[day]?.['1-2']==='done'),rest=dates.filter(day=>day<=date&&state.days[day]?.['1-2']==='rest').length;
@@ -138,14 +151,15 @@ function refreshWater(reset=false){const dialog=document.querySelector('#water-d
 function waterOwnerValid(){const dialog=document.querySelector('#water-dialog');if(dialog.dataset.owner!==(pushAccount()?.id||'')){dialog.close();toast('החשבון השתנה. יש לפתוח שוב את מעקב השתייה.');return false;}return true;}
 function saveDrink(kind,ml){if(!waterOwnerValid())return;const date=document.querySelector('#water-dialog').dataset.date;try{addDrink(state,date,kind,ml);save();render();refreshWater(true);const feedback=document.querySelector('#drink-feedback');feedback.hidden=false;feedback.className=storageOK?'drink-feedback saved':'drink-feedback failed';feedback.textContent=storageOK?`נוספו ${ml} מ״ל · ${waterDay(state,date).total.toLocaleString('he-IL')} מ״ל בסך הכול${waterDay(state,date).total>=state.waterGoal?' · היעד הושלם ✓':''}`:'לא ניתן לשמור במכשיר. הנתונים לא נשמרו.';if(storageOK){const preset=[...document.querySelectorAll('[data-drink-kind]')].find(b=>b.dataset.drinkKind===kind&&Number(b.dataset.drinkMl)===ml);if(preset){preset.classList.add('drink-added');preset.querySelector('small').textContent='✓ נוסף';}}}catch(error){toast(error.message);}}
 document.addEventListener('click',e=>{const b=e.target.closest('button,[data-edit-weight],[data-report-day],[data-water-date]');if(!b)return;
-if(b.id==='stretch-pause'){if(stretchTimer){stretchTimer=toggleStretchTimer(stretchTimer);storeStretch();updateStretchTimer();}return;}
-if(b.id==='stretch-reset'){if(stretchTimer){stretchTimer=createStretchTimer(stretchTimer.date,stretchTimer.owner);storeStretch();updateStretchTimer();}return;}
+if(b.id==='stretch-pause'){if(stretchTimer){stretchTimer=toggleStretchTimer(stretchTimer);enableStretchSound();storeStretch();updateStretchTimer();}return;}
+if(b.id==='stretch-reset'){if(stretchTimer){stretchTimer=createStretchTimer(stretchTimer.date,stretchTimer.owner);enableStretchSound();storeStretch();updateStretchTimer();}return;}
+if(b.id==='stretch-sound'){if(stretchSoundEnabled&&stretchAudio.ready){stretchSoundEnabled=false;stretchSoundNotice='';stretchAudio.stop();}else{stretchSoundEnabled=true;enableStretchSound();}try{localStorage.setItem(stretchSoundKey,stretchSoundEnabled?'on':'off');}catch{}updateStretchSoundControls();return;}
 if(b.id==='stretch-background'){document.querySelector('#stretch-dialog').close();render();return;}
 if(b.id==='stretch-done'){
  if(!stretchTimer||stretchTimer.owner!==(pushAccount()?.id||null))return;
  const key=stretchTimer.date,id='0-3',h=habits.find(h=>h.id===id),before=dailyScore(state,key),wasDone=state.days[key]?.[id]==='done',previous=structuredClone(state);
  state.days[key]??={};state.days[key][id]='done';save();if(!storageOK){state=previous;document.querySelector('#stretch-status').textContent='לא ניתן לשמור במכשיר. יש לנסות שוב.';return;}
- stretchTimer=null;storeStretch();document.querySelector('#stretch-dialog').close();render();if(!wasDone&&key===dayKey())reward(h,key,before,dailyScore(state,key));else toast('המתיחות סומנו כבוצעו');return;
+ stretchTimer=null;stretchAudio.stop();storeStretch();document.querySelector('#stretch-dialog').close();render();if(!wasDone&&key===dayKey())reward(h,key,before,dailyScore(state,key));else toast('המתיחות סומנו כבוצעו');return;
 }
 if(b.id==='open-weekly-workouts'){const dialog=document.querySelector('#weekly-workouts');dialog.dataset.date=habitDate();renderWeeklyWorkouts();dialog.showModal();return;}
 if(b.id==='close-weekly-workouts'){document.querySelector('#weekly-workouts').close();return;}
