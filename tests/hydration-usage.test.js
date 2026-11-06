@@ -22,8 +22,8 @@ test('water merges across devices by entry ID, retains deletions and validates a
  const changed=structuredClone(merged.snapshot);removeDrink(changed.state,date,one);const deleted=mergeSnapshots(merged.snapshot,changed,merged.snapshot);assert.equal(waterDay(deleted.snapshot.state,date).total,1000);
 });
 test('reporting streak includes water and weight records, tolerates unfinished today and breaks after a missed day',()=>{
- const state=load(null);state.days['2026-10-30']={'0-0':'done'};state.weights['2026-10-31']=75;
- addDrink(state,date,'water',250,100,one);assert.equal(reportingStreak(state,'2026-11-02').current,3);assert.equal(reportingStreak(state,'2026-11-03').current,0);
+ const state=load(null);state.days['2026-10-30']={'0-0':'done'};state.weights['2026-10-31']=75;state.weights['2026-10-29']=75;
+ addDrink(state,date,'water',250,100,one);assert.equal(reportingStreak(state,'2026-11-02').current,2);assert.equal(reportingStreak(state,'2026-11-03').current,0);
  assert.equal(streaks(state,'0-0','2026-11-01').current,0);
  const water=waterSeries(state,'week',date,date);assert.equal(water[0].value,250);
  const progress=completionSeries(state,'2026-10-31','2026-10-31');assert.equal(progress.at(-1).value,null);assert.ok(progress.find(day=>day.date==='2026-10-30').value>0);

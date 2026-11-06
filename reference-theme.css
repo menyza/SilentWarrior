@@ -325,3 +325,19 @@ header{height:68px;min-height:68px}
 .weekly-workouts-list strong{font-size:13px;overflow-wrap:anywhere;min-width:0}
 .weekly-workouts-empty{font-size:14px;line-height:1.8;margin:20px 0;color:var(--subtle)}
 #close-weekly-workouts{min-height:44px;width:100%;border:0;border-radius:10px;background:#276d59;color:white;font:inherit;font-size:13px}
+#stretch-dialog{width:350px;max-width:calc(100vw - 28px);max-height:88dvh;overflow:auto;text-align:center;border:1px solid var(--line);border-radius:23px;background:var(--surface);color:var(--ink);padding:21px}
+#stretch-title{font-size:22px;margin:0 0 5px;line-height:1.4}#stretch-date{font-size:11px;color:var(--subtle);margin:0 0 14px}
+#stretch-progress{display:grid;place-items:center;width:164px;height:164px;border-radius:50%;margin:0 auto;background:conic-gradient(#52aa86 var(--fill),var(--line) 0)}
+#stretch-clock{display:grid;place-items:center;width:146px;height:146px;border-radius:50%;background:var(--surface);color:var(--green);font-size:43px;font-weight:750;font-variant-numeric:tabular-nums;direction:ltr}
+#stretch-status{font-size:12px;line-height:1.6;min-height:38px;margin:12px 0;color:var(--subtle)}
+.stretch-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px}
+#stretch-dialog button{min-height:43px;border:1px solid var(--line);border-radius:11px;font:inherit;font-size:13px;color:var(--ink);background:var(--surface-soft);padding:7px 10px}
+#stretch-dialog button:disabled{opacity:.4}
+#stretch-done{width:100%;background:#276d59!important;color:#fff!important;border:0!important;font-weight:650!important}
+#stretch-background{width:100%;margin-top:7px;background:transparent!important;border:0!important;font-size:11px!important}
+.stretch-hint{font-size:10px;color:var(--subtle);line-height:1.5;margin:5px 0 0}
+.stretch-inline{font:700 14px/1.2 Heebo,sans-serif;color:var(--green);direction:ltr;white-space:nowrap;font-variant-numeric:tabular-nums}
+@media(max-height:600px){#stretch-dialog{padding:15px}#stretch-progress{width:132px;height:132px}#stretch-clock{width:116px;height:116px;font-size:36px}#stretch-title{font-size:20px}#stretch-status{margin:8px 0;min-height:32px}.stretch-inline{font-size:12px}}
+#stretch-dialog{padding:18px}#stretch-progress{width:148px;height:148px}#stretch-clock{width:130px;height:130px;font-size:40px}#stretch-date{margin-bottom:9px}#stretch-status{margin:8px 0;min-height:34px}
+#stretch-dialog button{min-height:40px}.stretch-controls{margin-bottom:8px}#stretch-background{min-height:32px!important;margin-top:4px}.stretch-hint{margin-top:4px}
+@media(max-height:600px){#stretch-dialog{padding:14px}#stretch-progress{width:120px;height:120px}#stretch-clock{width:104px;height:104px;font-size:34px}#stretch-date{font-size:10px;margin-bottom:6px}#stretch-status{font-size:11px;line-height:1.5;min-height:32px}#stretch-dialog button{min-height:38px}.stretch-controls{margin-bottom:7px}#stretch-background{min-height:30px!important}.stretch-hint{font-size:9px}}

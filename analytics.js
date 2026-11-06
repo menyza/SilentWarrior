@@ -4,13 +4,18 @@ import {dayKey,habits,allHabits,dailyScore,earnedPoints} from './model.js';
 export function shiftDay(key,amount){const d=new Date(key+'T12:00:00');d.setDate(d.getDate()+amount);return dayKey(d);}
 export function periodDates(mode,anchor){const d=new Date(anchor+'T12:00:00');if(mode==='month')d.setDate(1);else d.setDate(d.getDate()-d.getDay());const start=dayKey(d),end=new Date(d);if(mode==='month')end.setMonth(end.getMonth()+1);else end.setDate(end.getDate()+7);const dates=[];for(let k=start;k<dayKey(end);k=shiftDay(k,1))dates.push(k);return dates;}
 export function movePeriod(mode,anchor,amount){const d=new Date(anchor+'T12:00:00');if(mode==='month'){d.setDate(1);d.setMonth(d.getMonth()+amount);}else d.setDate(d.getDate()+amount*7);return dayKey(d);}
-export function streaks(state,id,today=dayKey()){
- const keys=Object.keys(state.days).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k<=today&&['done','rest'].includes(state.days[k]?.[id])).sort();
+export function isStreakDay(date){return new Date(date+'T12:00:00').getDay()<5;}
+export function previousStreakDay(date){let previous=shiftDay(date,-1);while(!isStreakDay(previous))previous=shiftDay(previous,-1);return previous;}
+function weekdayStreak(dates,today){
+ const keys=dates.filter(date=>validDate(date)&&date<=today&&isStreakDay(date)).sort(),marked=new Set(keys);
  let best=0,run=0,previous;
- for(const k of keys){run=previous&&shiftDay(previous,1)===k?run+1:1;best=Math.max(best,run);previous=k;}
- let current=0,k=['done','rest'].includes(state.days[today]?.[id])?today:shiftDay(today,-1);
- const marked=new Set(keys);while(marked.has(k)){current++;k=shiftDay(k,-1);}
+ for(const date of keys){run=previous&&previousStreakDay(date)===previous?run+1:1;best=Math.max(best,run);previous=date;}
+ let current=0,date=isStreakDay(today)&&marked.has(today)?today:previousStreakDay(today);
+ while(marked.has(date)){current++;date=previousStreakDay(date);}
  return {current,best};
+}
+export function streaks(state,id,today=dayKey()){
+ return weekdayStreak(Object.keys(state.days).filter(date=>['done','rest'].includes(state.days[date]?.[id])),today);
 }
 export function summary(state,dates,today=dayKey()){
  const elapsed=dates.filter(d=>d<=today),points=elapsed.reduce((n,d)=>n+dailyScore(state,d),0);
@@ -34,9 +39,8 @@ export function weeklyWorkoutProgress(state,today=dayKey()){
 }
 
 export function reportingStreak(state,today=dayKey()){
- const dates=[...new Set([...Object.keys(state.days),...Object.keys(state.weights),...Object.keys(state.reflections),...Object.keys(state.water||{})])].filter(date=>date<=today&&hasReport(state,date)).sort();
- let best=0,run=0,previous;for(const date of dates){run=previous&&shiftDay(previous,1)===date?run+1:1;best=Math.max(best,run);previous=date;}
- const set=new Set(dates);let current=0,date=set.has(today)?today:shiftDay(today,-1);while(set.has(date)){current++;date=shiftDay(date,-1);}return {current,best};
+ const dates=[...new Set([...Object.keys(state.days),...Object.keys(state.weights),...Object.keys(state.reflections),...Object.keys(state.water||{})])].filter(date=>hasReport(state,date));
+ return weekdayStreak(dates,today);
 }
 
 // Calendar days since the first actual report; empty or undone days do not start a journey.
